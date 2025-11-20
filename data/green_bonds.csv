@@ -1,0 +1,21 @@
+bond_id,issuer,country_code,issue_date,maturity_date,amount_usd_millions,currency,coupon_rate,use_of_proceeds,certification
+GB001,European Investment Bank,LUX,2023-01-15,2033-01-15,500,EUR,2.5,Renewable Energy,Climate Bonds Initiative
+GB002,World Bank,USA,2023-03-20,2028-03-20,1000,USD,3.0,Clean Transportation,Green Bond Principles
+GB003,Bank of China,CHN,2023-02-10,2030-02-10,750,CNY,3.2,Energy Efficiency,Climate Bonds Initiative
+GB004,Nordic Investment Bank,SWE,2023-04-05,2035-04-05,300,EUR,2.8,Sustainable Water Management,Green Bond Principles
+GB005,African Development Bank,CIV,2023-05-12,2033-05-12,250,USD,4.0,Climate Adaptation,Climate Bonds Initiative
+GB006,Asian Development Bank,PHL,2023-06-18,2031-06-18,600,USD,3.5,Renewable Energy,Green Bond Principles
+GB007,KfW Development Bank,DEU,2023-07-22,2038-07-22,800,EUR,2.6,Green Buildings,Climate Bonds Initiative
+GB008,Agence Française,FRA,2023-08-30,2040-08-30,1200,EUR,2.4,Renewable Energy,Green Bond Principles
+GB009,Government of Japan,JPN,2023-09-14,2033-09-14,900,JPY,1.8,Clean Transportation,Climate Bonds Initiative
+GB010,Canadian Pension Fund,CAN,2023-10-25,2035-10-25,450,CAD,3.1,Sustainable Forestry,Green Bond Principles
+GB011,Apple Inc,USA,2023-11-08,2030-11-08,1500,USD,2.9,Renewable Energy,Climate Bonds Initiative
+GB012,Iberdrola,ESP,2023-12-15,2034-12-15,550,EUR,2.7,Wind Energy,Green Bond Principles
+GB013,Ørsted,DNK,2024-01-20,2039-01-20,700,EUR,2.5,Offshore Wind,Climate Bonds Initiative
+GB014,Treasury of Australia,AUS,2024-02-28,2034-02-28,400,AUD,3.3,Climate Resilience,Green Bond Principles
+GB015,Banco do Brasil,BRA,2024-03-10,2031-03-10,350,BRL,4.5,Sustainable Agriculture,Climate Bonds Initiative
+GB016,State Bank of India,IND,2024-04-15,2034-04-15,500,INR,4.2,Solar Energy,Green Bond Principles
+GB017,Standard Chartered,GBR,2024-05-20,2032-05-20,650,GBP,3.0,Green Buildings,Climate Bonds Initiative
+GB018,ING Bank,NLD,2024-06-05,2036-06-05,450,EUR,2.6,Circular Economy,Green Bond Principles
+GB019,HSBC,GBR,2024-07-12,2037-07-12,800,USD,3.2,Renewable Energy,Climate Bonds Initiative
+GB020,Samsung Electronics,KOR,2024-08-18,2034-08-18,600,KRW,3.4,Energy Efficiency,Green Bond Principles
