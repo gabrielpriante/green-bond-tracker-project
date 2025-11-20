@@ -67,6 +67,56 @@ plt.show()
 
 **Note:** The `maps/` folder is a placeholder for storing generated geographic visualizations and map outputs from the analysis.
 
+## Visualizations
+
+The project includes a dedicated `visuals.py` module with beginner-friendly functions for creating publication-quality charts. All functions are well-documented and easy to use.
+
+### Available Visualizations
+
+**1. Project Type Bar Chart**
+- Shows the distribution of bonds across different green project categories (e.g., Renewable Energy, Clean Transportation)
+- Helps identify which project types receive the most funding
+- Creates a horizontal bar chart for easy reading of category names
+
+```python
+from src.visuals import create_project_type_bar_chart
+
+fig = create_project_type_bar_chart(bonds)
+plt.show()
+```
+
+**2. Choropleth Maps**
+- Geographic visualizations showing bond data by country
+- Uses color intensity to represent values (darker = higher)
+- Can display total bond amounts or number of bonds per country
+- Built on GeoJSON data with ISO country codes
+
+```python
+from src.visuals import create_choropleth_map
+
+# Map showing total bond amounts
+fig = create_choropleth_map(geo_bonds, column='total_amount_usd_millions')
+plt.show()
+
+# Map showing bond counts
+fig = create_choropleth_map(geo_bonds, column='bond_count')
+plt.show()
+```
+
+**3. Saving Charts**
+- All charts can be saved to the `outputs/` directory as high-resolution PNG files
+- Useful for reports, presentations, and sharing
+
+```python
+from src.visuals import save_figure, create_and_save_all_visuals
+
+# Save a single chart
+save_figure(fig, 'my_chart.png')
+
+# Or generate and save all standard visualizations at once
+saved_files = create_and_save_all_visuals(bonds, geo_bonds)
+```
+
 ### Run the Demo Notebook
 
 ```bash
@@ -77,9 +127,11 @@ The demo notebook includes:
 - Data loading and validation
 - Summary statistics
 - Use of proceeds analysis
+- Project type visualizations using the `visuals.py` module
 - Geographic choropleth maps
 - Time series analysis
 - Certification standard analysis
+- Automated generation of all visualizations
 
 ## Project Structure
 
@@ -90,14 +142,16 @@ green-bond-tracker-project/
 │   └── countries_geo.json      # Country geometries with ISO codes
 ├── src/                # Python source code
 │   ├── __init__.py
-│   └── data_loader.py          # Data loading and validation
+│   ├── data_loader.py          # Data loading and validation
+│   └── visuals.py              # Visualization functions (bar charts, maps)
 ├── notebooks/          # Jupyter notebooks
 │   └── green_bond_demo.ipynb   # Demo with visualizations
 ├── docs/               # Documentation
 │   └── README.md
 ├── tests/              # Unit tests
 │   └── test_data_loader.py
-├── maps/               # Output folder for generated maps and visualizations
+├── outputs/            # Generated charts and visualizations
+├── maps/               # Placeholder for map outputs
 └── requirements.txt    # Python dependencies
 ```
 
