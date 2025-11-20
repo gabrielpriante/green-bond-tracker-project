@@ -1,8 +1,11 @@
 # Green Bond Project Tracker
 
-A lightweight, open-source tracker for green bonds and sustainability-linked projects with GIS (Geographic Information System) support. Designed for learning, transparency, and portfolio-level insights.
+> **⚠️ IMPORTANT DISCLAIMER**  
+> **This is an educational project for learning purposes only.**  
+> **NOT intended for investment advice or financial decision-making.**  
+> **Always consult qualified financial advisors before making investment decisions.**
 
-**⚠️ Educational Notice:** This is an educational project for learning purposes only. It is NOT intended for investment advice or financial decision-making. Always consult qualified financial advisors before making investment decisions.
+A lightweight, open-source tracker for green bonds and sustainability-linked projects with GIS (Geographic Information System) support. Designed for learning, transparency, and portfolio-level insights.
 
 ## Features
 
@@ -34,19 +37,35 @@ from src.data_loader import (
     join_bonds_with_geo,
     get_summary_statistics
 )
+import matplotlib.pyplot as plt
 
-# Load data
-bonds = load_green_bonds()
-countries = load_country_geometries()
+# Load data from data/ folder
+bonds = load_green_bonds()  # Loads data/green_bonds.csv
+countries = load_country_geometries()  # Loads data/countries_geo.json
 
 # Get statistics
 stats = get_summary_statistics(bonds)
 print(f"Total bonds: {stats['total_bonds']}")
 print(f"Total amount: ${stats['total_amount_usd_millions']:.2f}M USD")
 
-# Create geographic dataset
+# Create geographic dataset and visualize
 geo_bonds = join_bonds_with_geo(bonds, countries)
+
+# Generate choropleth map (saved to maps/ folder)
+fig, ax = plt.subplots(1, 1, figsize=(14, 8))
+geo_bonds.plot(
+    column='total_amount_usd_millions',
+    ax=ax,
+    legend=True,
+    cmap='YlGn',
+    edgecolor='black'
+)
+ax.set_title('Green Bonds by Country')
+plt.savefig('maps/green_bonds_map.png', dpi=300, bbox_inches='tight')
+plt.show()
 ```
+
+**Note:** The `maps/` folder is a placeholder for storing generated geographic visualizations and map outputs from the analysis.
 
 ### Run the Demo Notebook
 
@@ -67,7 +86,7 @@ The demo notebook includes:
 ```
 green-bond-tracker-project/
 ├── data/               # Sample data files
-│   ├── green_bonds.csv         # Green bond data
+│   ├── green_bonds.csv         # Green bond data with field descriptions
 │   └── countries_geo.json      # Country geometries with ISO codes
 ├── src/                # Python source code
 │   ├── __init__.py
@@ -78,7 +97,7 @@ green-bond-tracker-project/
 │   └── README.md
 ├── tests/              # Unit tests
 │   └── test_data_loader.py
-├── maps/               # Generated visualizations
+├── maps/               # Output folder for generated maps and visualizations
 └── requirements.txt    # Python dependencies
 ```
 
