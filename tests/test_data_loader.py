@@ -131,6 +131,30 @@ class TestValidateBondData:
         is_valid, issues = validate_bond_data(df)
         assert not is_valid
         assert any('country code' in issue.lower() for issue in issues)
+    
+    def test_detect_null_issuer(self):
+        """Test detection of null issuer values."""
+        df = pd.DataFrame({
+            'bond_id': ['B1', 'B2', 'B3'],
+            'issuer': ['Issuer1', None, 'Issuer3'],
+            'country_code': ['USA', 'GBR', 'DEU'],
+            'amount_usd_millions': [100, 200, 300]
+        })
+        is_valid, issues = validate_bond_data(df)
+        assert not is_valid
+        assert any('issuer' in issue.lower() for issue in issues)
+    
+    def test_detect_invalid_iso_code_length(self):
+        """Test detection of ISO codes with incorrect length."""
+        df = pd.DataFrame({
+            'bond_id': ['B1', 'B2', 'B3', 'B4'],
+            'issuer': ['Issuer1', 'Issuer2', 'Issuer3', 'Issuer4'],
+            'country_code': ['USA', 'ABCD', 'X', 'DEU'],  # ABCD is 4 chars, X is 1 char
+            'amount_usd_millions': [100, 200, 300, 400]
+        })
+        is_valid, issues = validate_bond_data(df)
+        assert not is_valid
+        assert any('country code' in issue.lower() and '3 characters' in issue for issue in issues)
 
 
 class TestJoinBondsWithGeo:

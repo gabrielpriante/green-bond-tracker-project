@@ -1,3 +1,18 @@
+# Green Bonds Sample Data
+# Educational dataset for demonstration purposes - not for investment advice
+#
+# Field Descriptions:
+# - bond_id: Unique identifier for each bond (e.g., GB001, GB002)
+# - issuer: Name of the organization issuing the bond
+# - country_code: ISO 3166-1 alpha-3 country code (3-letter code)
+# - issue_date: Date when the bond was issued (YYYY-MM-DD)
+# - maturity_date: Date when the bond matures (YYYY-MM-DD)
+# - amount_usd_millions: Bond amount in millions of USD
+# - currency: Original currency denomination (EUR, USD, CNY, etc.)
+# - coupon_rate: Annual coupon rate as a percentage
+# - use_of_proceeds: Category of green project funded by the bond
+# - certification: Green bond certification standard or framework
+#
 bond_id,issuer,country_code,issue_date,maturity_date,amount_usd_millions,currency,coupon_rate,use_of_proceeds,certification
 GB001,European Investment Bank,LUX,2023-01-15,2033-01-15,500,EUR,2.5,Renewable Energy,Climate Bonds Initiative
 GB002,World Bank,USA,2023-03-20,2028-03-20,1000,USD,3.0,Clean Transportation,Green Bond Principles
@@ -19,3 +34,4 @@ GB017,Standard Chartered,GBR,2024-05-20,2032-05-20,650,GBP,3.0,Green Buildings,C
 GB018,ING Bank,NLD,2024-06-05,2036-06-05,450,EUR,2.6,Circular Economy,Green Bond Principles
 GB019,HSBC,GBR,2024-07-12,2037-07-12,800,USD,3.2,Renewable Energy,Climate Bonds Initiative
 GB020,Samsung Electronics,KOR,2024-08-18,2034-08-18,600,KRW,3.4,Energy Efficiency,Green Bond Principles
+

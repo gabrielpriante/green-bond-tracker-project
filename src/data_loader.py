@@ -41,7 +41,7 @@ def load_green_bonds(filepath: Optional[str] = None) -> pd.DataFrame:
         filepath = base_path / "data" / "green_bonds.csv"
     
     try:
-        df = pd.read_csv(filepath)
+        df = pd.read_csv(filepath, comment='#')
     except FileNotFoundError:
         raise FileNotFoundError(f"Green bonds data file not found: {filepath}")
     
