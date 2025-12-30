@@ -2,8 +2,6 @@
 Unit tests for the schema module.
 """
 
-import pytest
-
 from src.schema import (
     SCHEMA,
     CertificationStandard,

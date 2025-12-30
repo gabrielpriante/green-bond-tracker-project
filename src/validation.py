@@ -8,12 +8,11 @@ Note: This is an educational project and should not be used for investment advic
 """
 
 import re
-from datetime import datetime
 from typing import Any
 
 import pandas as pd
 
-from .schema import SCHEMA, CertificationStandard, FieldType, UseOfProceeds
+from .schema import SCHEMA, FieldType
 
 
 class ValidationResult:

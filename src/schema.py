@@ -9,7 +9,7 @@ Note: This is an educational project and should not be used for investment advic
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class FieldType(Enum):
@@ -64,13 +64,13 @@ class FieldDefinition:
     type: FieldType
     required: bool = True
     description: str = ""
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
-    allowed_values: Optional[list[str]] = None
-    pattern: Optional[str] = None
-    example: Optional[Any] = None
+    min_value: float | None = None
+    max_value: float | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    allowed_values: list[str] | None = None
+    pattern: str | None = None
+    example: Any | None = None
 
     def __post_init__(self):
         """Validate field definition after initialization."""
@@ -181,7 +181,7 @@ class GreenBondSchema:
             ),
         ]
 
-    def get_field(self, name: str) -> Optional[FieldDefinition]:
+    def get_field(self, name: str) -> FieldDefinition | None:
         """Get a field definition by name."""
         for field_def in self.fields:
             if field_def.name == name:

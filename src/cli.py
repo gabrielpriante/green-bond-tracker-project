@@ -7,9 +7,7 @@ Note: This is an educational project and should not be used for investment advic
 """
 
 from pathlib import Path
-from typing import Optional
 
-import pandas as pd
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -29,7 +27,7 @@ def validate(
         help="Path to the green bonds CSV file",
         exists=True,
     ),
-    output: Optional[Path] = typer.Option(
+    output: Path | None = typer.Option(
         None,
         "--output",
         "-o",
@@ -69,9 +67,9 @@ def validate(
 
         # Print results
         if result.is_valid:
-            console.print(f"\n[bold green]✓ Validation PASSED[/bold green]")
+            console.print("\n[bold green]✓ Validation PASSED[/bold green]")
         else:
-            console.print(f"\n[bold red]✗ Validation FAILED[/bold red]")
+            console.print("\n[bold red]✗ Validation FAILED[/bold red]")
 
         console.print(f"  Errors: [red]{len(result.errors)}[/red]")
         console.print(f"  Warnings: [yellow]{len(result.warnings)}[/yellow]")
@@ -238,7 +236,7 @@ def viz(
     from .data_loader import join_bonds_with_geo, load_country_geometries, load_green_bonds
     from .visuals import create_and_save_all_visuals
 
-    console.print(f"\n[bold cyan]Creating visualizations[/bold cyan]")
+    console.print("\n[bold cyan]Creating visualizations[/bold cyan]")
     console.print(f"  Data: {csv_path}")
     console.print(f"  Geo: {geo_path}")
     console.print(f"  Output: {output_dir}")
@@ -269,9 +267,7 @@ def viz(
                 from .interactive import create_interactive_choropleth_map
 
                 console.print("\n[cyan]Generating interactive map...[/cyan]")
-                interactive_path = (
-                    output_dir / "green_bonds_interactive_map.html"
-                )
+                interactive_path = output_dir / "green_bonds_interactive_map.html"
                 create_interactive_choropleth_map(
                     geo_bonds,
                     output_path=str(interactive_path),

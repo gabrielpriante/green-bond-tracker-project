@@ -8,7 +8,6 @@ Note: This is an educational project and should not be used for investment advic
 """
 
 from pathlib import Path
-from typing import Optional
 
 import geopandas as gpd
 
@@ -24,8 +23,8 @@ except ImportError:
 def create_interactive_choropleth_map(
     geo_bonds_df: gpd.GeoDataFrame,
     column: str = "total_amount_usd_millions",
-    output_path: Optional[str] = None,
-    title: Optional[str] = None,
+    output_path: str | None = None,
+    title: str | None = None,
 ) -> "folium.Map":
     """
     Create an interactive choropleth map showing green bond data by country.
@@ -117,10 +116,6 @@ def create_interactive_choropleth_map(
     """
     m.get_root().html.add_child(folium.Element(title_html))
 
-    # Get min and max values for color scale
-    min_val = geo_bonds_wgs84[column].min()
-    max_val = geo_bonds_wgs84[column].max()
-
     # Create choropleth layer
     folium.Choropleth(
         geo_data=geo_bonds_wgs84,
@@ -201,7 +196,7 @@ def create_interactive_choropleth_map(
 def create_interactive_bubble_map(
     bonds_df,
     geo_df: gpd.GeoDataFrame,
-    output_path: Optional[str] = None,
+    output_path: str | None = None,
 ) -> "folium.Map":
     """
     Create an interactive bubble map with circles proportional to bond amounts.
@@ -273,10 +268,10 @@ def create_interactive_bubble_map(
             radius=radius,
             popup=folium.Popup(
                 f"""
-                <b>{row['name']}</b><br>
-                Total Amount: ${row['total_amount']:.2f}M<br>
-                Number of Bonds: {row['bond_count']}<br>
-                Unique Issuers: {row['unique_issuers']}
+                <b>{row["name"]}</b><br>
+                Total Amount: ${row["total_amount"]:.2f}M<br>
+                Number of Bonds: {row["bond_count"]}<br>
+                Unique Issuers: {row["unique_issuers"]}
                 """,
                 max_width=200,
             ),

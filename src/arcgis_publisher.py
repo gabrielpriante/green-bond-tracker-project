@@ -70,7 +70,9 @@ class ArcGISPublisher:
         RuntimeError
             Feature not implemented
         """
-        raise RuntimeError("ArcGIS connection not implemented. See docs/arcgis/arcgis_integration_plan.md")
+        raise RuntimeError(
+            "ArcGIS connection not implemented. See docs/arcgis/arcgis_integration_plan.md"
+        )
 
     def publish_feature_service(
         self,
@@ -191,8 +193,7 @@ class ArcGISPublisher:
             Feature not implemented
         """
         raise RuntimeError(
-            "Item listing not implemented. "
-            "See docs/arcgis/arcgis_integration_plan.md"
+            "Item listing not implemented. See docs/arcgis/arcgis_integration_plan.md"
         )
 
     def delete_item(self, item_id: str):
@@ -212,8 +213,7 @@ class ArcGISPublisher:
             Feature not implemented
         """
         raise RuntimeError(
-            "Item deletion not implemented. "
-            "See docs/arcgis/arcgis_integration_plan.md"
+            "Item deletion not implemented. See docs/arcgis/arcgis_integration_plan.md"
         )
 
 
@@ -247,6 +247,7 @@ REQUIRED_ARCGIS_PACKAGES = [
     "keyring>=24.0.0",
     "python-dotenv>=1.0.0",
 ]
+
 
 # Placeholder for supported authentication methods
 class AuthMethod:
