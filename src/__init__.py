@@ -15,7 +15,7 @@ from .data_loader import (
     get_summary_statistics
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     'load_green_bonds',
