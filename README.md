@@ -9,11 +9,14 @@ A lightweight, open-source tracker for green bonds and sustainability-linked pro
 
 ## Features
 
-- 📊 **Data Management**: Load and validate green bond data with ISO country codes
-- 🗺️ **GIS Integration**: Visualize bond data on interactive choropleth maps
-- 📈 **Analytics**: Generate summary statistics and time series analysis
+- 📊 **Data Management**: Load and validate green bond data with comprehensive schema validation
+- 🗺️ **GIS Integration**: Visualize bond data on static and interactive choropleth maps
+- 📈 **Analytics**: Generate summary statistics and comparative analysis
 - 📓 **Demo Notebook**: Comprehensive Jupyter notebook with examples
-- ✅ **Data Validation**: Ensure data quality and completeness
+- ✅ **Data Validation**: Rigorous validation with row-level error reporting
+- 🖥️ **Command Line Interface**: Easy-to-use CLI for validation, analysis, and visualization
+- 🌐 **Interactive Maps**: Optional Folium-based interactive visualizations
+- 🧪 **Well-Tested**: Comprehensive test suite with >80% code coverage
 
 ## Quick Start
 
@@ -24,11 +27,37 @@ A lightweight, open-source tracker for green bonds and sustainability-linked pro
 git clone https://github.com/gabrielpriante/green-bond-tracker-project.git
 cd green-bond-tracker-project
 
-# Install dependencies
+# Install dependencies (basic)
 pip install -r requirements.txt
+
+# OR install with CLI and all features
+pip install -e ".[all]"
 ```
 
-### Usage
+### Command Line Interface (Recommended)
+
+The easiest way to use the Green Bond Tracker is through the CLI:
+
+```bash
+# Validate your bond data
+python -m src.cli validate data/green_bonds.csv
+
+# Show summary statistics
+python -m src.cli summary data/green_bonds.csv
+
+# Generate all visualizations
+python -m src.cli viz data/green_bonds.csv --output-dir outputs/
+
+# Generate interactive map (requires folium)
+python -m src.cli viz data/green_bonds.csv --interactive
+
+# Get detailed validation report with row-level flags
+python -m src.cli validate data/green_bonds.csv --output validation_report.csv --verbose
+```
+
+### Python API
+
+For programmatic access, use the Python API:
 
 ```python
 from src.data_loader import (
@@ -133,38 +162,85 @@ The demo notebook includes:
 - Certification standard analysis
 - Automated generation of all visualizations
 
+## Data Validation
+
+The toolkit includes comprehensive data validation:
+
+```bash
+# Validate your data
+python -m src.cli validate data/green_bonds.csv
+
+# Get detailed validation report
+python -m src.cli validate data/green_bonds.csv --output report.csv --verbose
+```
+
+Validation checks include:
+- ✅ Required field completeness
+- ✅ ISO 3166-1 alpha-3 country codes
+- ✅ Numeric ranges and bounds
+- ✅ Date format and consistency
+- ✅ Duplicate detection
+- ✅ Data type verification
+
+See [`docs/data/schema.md`](docs/data/schema.md) for complete schema documentation.
+
 ## Project Structure
 
 ```
 green-bond-tracker-project/
-├── data/               # Sample data files
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # GitHub Actions CI/CD
+├── data/                       # Sample data files
 │   ├── green_bonds.csv         # Green bond data with field descriptions
 │   └── countries_geo.json      # Country geometries with ISO codes
-├── src/                # Python source code
+├── src/                        # Python source code
 │   ├── __init__.py
-│   ├── data_loader.py          # Data loading and validation
-│   └── visuals.py              # Visualization functions (bar charts, maps)
-├── notebooks/          # Jupyter notebooks
+│   ├── data_loader.py          # Data loading and basic validation
+│   ├── schema.py               # Schema definitions (single source of truth)
+│   ├── validation.py           # Enhanced validation with row-level flags
+│   ├── visuals.py              # Static visualization functions
+│   ├── interactive.py          # Interactive maps with Folium
+│   ├── cli.py                  # Command-line interface
+│   └── arcgis_publisher.py     # ArcGIS integration (stub)
+├── notebooks/                  # Jupyter notebooks
 │   └── green_bond_demo.ipynb   # Demo with visualizations
-├── docs/               # Documentation
-│   └── README.md
-├── tests/              # Unit tests
-│   └── test_data_loader.py
-├── outputs/            # Generated charts and visualizations
-├── maps/               # Placeholder for map outputs
-└── requirements.txt    # Python dependencies
+├── docs/                       # Documentation
+│   ├── README.md
+│   ├── CONTRIBUTING.md         # Contributing guidelines
+│   ├── ROADMAP.md              # Project roadmap
+│   ├── data/
+│   │   └── schema.md           # Data schema documentation
+│   └── arcgis/
+│       └── arcgis_integration_plan.md  # ArcGIS integration plan
+├── tests/                      # Unit tests
+│   ├── fixtures/               # Test data
+│   ├── test_data_loader.py
+│   ├── test_schema.py
+│   ├── test_validation.py
+│   └── test_visuals.py
+├── outputs/                    # Generated charts and visualizations
+├── maps/                       # Placeholder for map outputs
+├── pyproject.toml              # Project configuration and dependencies
+├── .editorconfig               # Editor configuration
+├── .pre-commit-config.yaml     # Pre-commit hooks
+└── requirements.txt            # Python dependencies (runtime)
 ```
 
 ## Data Schema
 
-### Green Bonds CSV
-- `bond_id`: Unique bond identifier
-- `issuer`: Bond issuer name
-- `country_code`: ISO 3166-1 alpha-3 country code
-- `issue_date`, `maturity_date`: Bond dates
-- `amount_usd_millions`: Bond amount in USD millions
-- `currency`: Original currency
-- `coupon_rate`: Annual coupon rate (%)
+Complete schema documentation is available in [`docs/data/schema.md`](docs/data/schema.md).
+
+### Green Bonds CSV (Required Fields)
+- `bond_id`: Unique bond identifier (string, required)
+- `issuer`: Bond issuer name (string, required)
+- `country_code`: ISO 3166-1 alpha-3 country code (3-letter, required)
+- `amount_usd_millions`: Bond amount in USD millions (float >= 0, required)
+
+### Green Bonds CSV (Optional Fields)
+- `issue_date`, `maturity_date`: Bond dates (ISO 8601 format: YYYY-MM-DD)
+- `currency`: Original currency (ISO 4217 code)
+- `coupon_rate`: Annual coupon rate in % (0-100)
 - `use_of_proceeds`: Green project category
 - `certification`: Certification standard
 
@@ -177,41 +253,112 @@ green-bond-tracker-project/
 
 ## Documentation
 
-Detailed documentation is available in the [`docs/`](docs/README.md) directory, including:
-- API reference
-- Data schema details
-- Usage examples
-- Contributing guidelines
+Detailed documentation is available in the [`docs/`](docs/) directory:
+
+- 📖 **[Data Schema](docs/data/schema.md)**: Complete field definitions and validation rules
+- 🤝 **[Contributing](docs/CONTRIBUTING.md)**: Guidelines for contributors
+- 🗺️ **[Roadmap](docs/ROADMAP.md)**: Project roadmap and future plans
+- 🌐 **[ArcGIS Integration Plan](docs/arcgis/arcgis_integration_plan.md)**: Planned GIS publishing features
 
 ## Requirements
 
-- Python 3.8+
+### Core Dependencies
+
+- Python 3.10+ (tested on 3.10, 3.11, 3.12)
 - pandas >= 2.0.0
 - geopandas >= 0.14.0
 - matplotlib >= 3.7.0
-- jupyter >= 1.0.0
+- typer >= 0.9.0 (for CLI)
+- rich >= 13.0.0 (for CLI output)
 
-See [`requirements.txt`](requirements.txt) for the complete list.
+### Optional Dependencies
+
+```bash
+# For interactive maps
+pip install -e ".[interactive]"  # Adds folium
+
+# For Jupyter notebooks
+pip install -e ".[notebook]"     # Adds jupyter, notebook
+
+# For development
+pip install -e ".[dev]"          # Adds pytest, ruff, pre-commit
+
+# Install everything
+pip install -e ".[all]"
+```
+
+See [`pyproject.toml`](pyproject.toml) for dependency management.
 
 ## Testing
 
 ```bash
 # Run tests
-python -m pytest tests/
+pytest tests/
 
 # Run tests with coverage
-python -m pytest tests/ --cov=src
+pytest tests/ --cov=src --cov-report=term-missing
+
+# Run linting
+ruff check src/ tests/
+
+# Run formatting
+ruff format src/ tests/
+
+# Run pre-commit hooks
+pre-commit run --all-files
+```
+
+## CLI Reference
+
+### Commands
+
+```bash
+# Validate data
+python -m src.cli validate <csv_path> [--output report.csv] [--verbose]
+
+# Show statistics
+python -m src.cli summary [csv_path] [--json]
+
+# Generate visualizations
+python -m src.cli viz [csv_path] [--output-dir DIR] [--interactive]
+
+# Show version
+python -m src.cli version
+```
+
+### Examples
+
+```bash
+# Validate with detailed report
+python -m src.cli validate data/green_bonds.csv --output validation_report.csv -v
+
+# Get summary as JSON
+python -m src.cli summary data/green_bonds.csv --json
+
+# Generate all visualizations including interactive map
+python -m src.cli viz data/green_bonds.csv --output-dir outputs/ --interactive
 ```
 
 ## Contributing
 
-Contributions are welcome! This is an educational project aimed at helping people learn about green bonds and GIS data visualization. Please:
+Contributions are welcome! This is an educational project aimed at helping people learn about green bonds and GIS data visualization.
+
+Please see **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** for detailed guidelines on:
+- Setting up development environment
+- Code style and standards
+- Testing requirements
+- Pull request process
+
+Quick start for contributors:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Install dev dependencies (`pip install -e ".[dev]"`)
+4. Make your changes and add tests
+5. Run tests and linting (`pytest tests/ && ruff check src/ tests/`)
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
 
 ## License
 

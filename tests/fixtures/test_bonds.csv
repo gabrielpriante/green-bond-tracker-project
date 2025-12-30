@@ -1,0 +1,9 @@
+# Test Fixtures
+
+# Small sample green bond data for testing (5 records)
+bond_id,issuer,country_code,issue_date,maturity_date,amount_usd_millions,currency,coupon_rate,use_of_proceeds,certification
+GB001,Test Bank A,USA,2023-01-15,2033-01-15,500.0,USD,2.5,Renewable Energy,Climate Bonds Initiative
+GB002,Test Bank B,GBR,2023-03-20,2028-03-20,1000.0,GBP,3.0,Clean Transportation,Green Bond Principles
+GB003,Test Bank C,DEU,2023-02-10,2030-02-10,750.0,EUR,3.2,Energy Efficiency,Climate Bonds Initiative
+GB004,Test Bank D,FRA,2023-04-05,2035-04-05,300.0,EUR,2.8,Sustainable Water Management,Green Bond Principles
+GB005,Test Bank E,JPN,2023-05-12,2028-05-12,400.0,JPY,1.5,Green Buildings,EU Green Bond Standard
