@@ -91,9 +91,7 @@ def load_country_geometries(filepath: str | None = None) -> gpd.GeoDataFrame:
 
     # Ensure ISO code column exists
     if "iso_a3" not in gdf.columns:
-        warnings.warn(
-            "GeoJSON missing 'iso_a3' column for ISO country codes", stacklevel=2
-        )
+        warnings.warn("GeoJSON missing 'iso_a3' column for ISO country codes", stacklevel=2)
 
     return gdf
 
