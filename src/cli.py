@@ -139,7 +139,7 @@ def summary(
     - Portfolio overview (total bonds, issuance, issuers, countries, data quality)
     - Concentration metrics (top 5 countries share, HHI)
     - Top categories (top country, year, project type)
-    
+
     Outputs:
     - Console: Human-readable summary table
     - CSV: outputs/portfolio_summary.csv
@@ -157,7 +157,7 @@ def summary(
 
         # Generate portfolio summary table
         summary_table = portfolio_summary_table(df)
-        
+
         # Generate data coverage report
         coverage_report = data_coverage_report(df)
 
@@ -193,11 +193,11 @@ def summary(
 
         # Save to CSV files
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         summary_path = output_dir / "portfolio_summary.csv"
         summary_table.to_csv(summary_path, index=False)
         console.print(f"\n[green]✓[/green] Portfolio summary saved to: {summary_path}")
-        
+
         coverage_path = output_dir / "data_coverage_report.csv"
         coverage_report.to_csv(coverage_path, index=False)
         console.print(f"[green]✓[/green] Data coverage report saved to: {coverage_path}")
