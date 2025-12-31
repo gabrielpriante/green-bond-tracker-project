@@ -106,7 +106,14 @@ def aggregation_by_country(df: pd.DataFrame) -> pd.DataFrame:
     Share is calculated only when amounts are available.
     """
     if "country_code" not in df.columns:
-        return pd.DataFrame(columns=["country_code", "bond_count", "total_issuance_usd_millions", "share_of_total_pct"])
+        return pd.DataFrame(
+            columns=[
+                "country_code",
+                "bond_count",
+                "total_issuance_usd_millions",
+                "share_of_total_pct",
+            ]
+        )
 
     # Group by country
     agg_dict = {"bond_id": "count"}
@@ -122,7 +129,9 @@ def aggregation_by_country(df: pd.DataFrame) -> pd.DataFrame:
         # Calculate share of total
         global_total = grouped["total_issuance_usd_millions"].sum()
         if global_total > 0:
-            grouped["share_of_total_pct"] = (grouped["total_issuance_usd_millions"] / global_total) * 100
+            grouped["share_of_total_pct"] = (
+                grouped["total_issuance_usd_millions"] / global_total
+            ) * 100
         else:
             grouped["share_of_total_pct"] = 0.0
 
@@ -167,7 +176,9 @@ def aggregation_by_year(df: pd.DataFrame) -> pd.DataFrame:
     Requires issue_date column.
     """
     if "issue_date" not in df.columns:
-        return pd.DataFrame(columns=["year", "bond_count", "issuance_amount_usd_millions", "yoy_growth_pct"])
+        return pd.DataFrame(
+            columns=["year", "bond_count", "issuance_amount_usd_millions", "yoy_growth_pct"]
+        )
 
     # Extract year from issue_date
     df_with_year = df.dropna(subset=["issue_date"]).copy()
@@ -191,7 +202,10 @@ def aggregation_by_year(df: pd.DataFrame) -> pd.DataFrame:
     grouped = grouped.sort_values("year")
 
     # Calculate YoY growth
-    if "issuance_amount_usd_millions" in grouped.columns and grouped["issuance_amount_usd_millions"].notna().any():
+    if (
+        "issuance_amount_usd_millions" in grouped.columns
+        and grouped["issuance_amount_usd_millions"].notna().any()
+    ):
         grouped["yoy_growth_pct"] = grouped["issuance_amount_usd_millions"].pct_change() * 100
         grouped["yoy_growth_pct"] = grouped["yoy_growth_pct"].round(2)
     else:
@@ -227,13 +241,17 @@ def aggregation_by_category(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
     Handles missing values by excluding them from aggregation.
     """
     if column_name not in df.columns:
-        return pd.DataFrame(columns=[column_name, "bond_count", "total_issuance_usd_millions", "share_of_total_pct"])
+        return pd.DataFrame(
+            columns=[column_name, "bond_count", "total_issuance_usd_millions", "share_of_total_pct"]
+        )
 
     # Filter out null values for the category
     df_valid = df.dropna(subset=[column_name])
 
     if len(df_valid) == 0:
-        return pd.DataFrame(columns=[column_name, "bond_count", "total_issuance_usd_millions", "share_of_total_pct"])
+        return pd.DataFrame(
+            columns=[column_name, "bond_count", "total_issuance_usd_millions", "share_of_total_pct"]
+        )
 
     # Group by category
     agg_dict = {"bond_id": "count"}
@@ -249,7 +267,9 @@ def aggregation_by_category(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
         # Calculate share of total
         global_total = grouped["total_issuance_usd_millions"].sum()
         if global_total > 0:
-            grouped["share_of_total_pct"] = (grouped["total_issuance_usd_millions"] / global_total) * 100
+            grouped["share_of_total_pct"] = (
+                grouped["total_issuance_usd_millions"] / global_total
+            ) * 100
         else:
             grouped["share_of_total_pct"] = 0.0
 
@@ -385,7 +405,9 @@ def data_coverage_report(df: pd.DataFrame) -> pd.DataFrame:
     total_rows = len(df)
 
     if total_rows == 0:
-        return pd.DataFrame(columns=["column_name", "non_null_count", "pct_non_null", "coverage_note"])
+        return pd.DataFrame(
+            columns=["column_name", "non_null_count", "pct_non_null", "coverage_note"]
+        )
 
     coverage_data = []
 
@@ -399,12 +421,14 @@ def data_coverage_report(df: pd.DataFrame) -> pd.DataFrame:
         else:
             note = "✓ Good coverage"
 
-        coverage_data.append({
-            "column_name": col,
-            "non_null_count": non_null_count,
-            "pct_non_null": round(pct_non_null, 2),
-            "coverage_note": note
-        })
+        coverage_data.append(
+            {
+                "column_name": col,
+                "non_null_count": non_null_count,
+                "pct_non_null": round(pct_non_null, 2),
+                "coverage_note": note,
+            }
+        )
 
     result = pd.DataFrame(coverage_data)
     result = result.sort_values("pct_non_null", ascending=False)
@@ -444,79 +468,87 @@ def portfolio_summary_table(df: pd.DataFrame) -> pd.DataFrame:
     summary_data.append({"metric": "Total Bonds", "value": str(overview["total_bonds"])})
 
     if overview["total_issuance_usd_millions"] is not None:
-        summary_data.append({
-            "metric": "Total Issuance (USD Millions)",
-            "value": f"${overview['total_issuance_usd_millions']:,.2f}"
-        })
+        summary_data.append(
+            {
+                "metric": "Total Issuance (USD Millions)",
+                "value": f"${overview['total_issuance_usd_millions']:,.2f}",
+            }
+        )
 
     if overview["unique_issuers"] is not None:
         summary_data.append({"metric": "Unique Issuers", "value": str(overview["unique_issuers"])})
 
     if overview["year_range"] is not None:
-        summary_data.append({
-            "metric": "Year Range",
-            "value": f"{overview['year_range'][0]}-{overview['year_range'][1]}"
-        })
+        summary_data.append(
+            {
+                "metric": "Year Range",
+                "value": f"{overview['year_range'][0]}-{overview['year_range'][1]}",
+            }
+        )
 
     # Data quality metrics
     if overview["pct_missing_country"] is not None:
-        summary_data.append({
-            "metric": "Missing Country (%)",
-            "value": f"{overview['pct_missing_country']}%"
-        })
+        summary_data.append(
+            {"metric": "Missing Country (%)", "value": f"{overview['pct_missing_country']}%"}
+        )
     if overview["pct_missing_year"] is not None:
-        summary_data.append({
-            "metric": "Missing Year (%)",
-            "value": f"{overview['pct_missing_year']}%"
-        })
+        summary_data.append(
+            {"metric": "Missing Year (%)", "value": f"{overview['pct_missing_year']}%"}
+        )
     if overview["pct_missing_amount"] is not None:
-        summary_data.append({
-            "metric": "Missing Amount (%)",
-            "value": f"{overview['pct_missing_amount']}%"
-        })
+        summary_data.append(
+            {"metric": "Missing Amount (%)", "value": f"{overview['pct_missing_amount']}%"}
+        )
 
     # Concentration metrics
     top_5_country = top_n_concentration(df, "country_code", n=5)
-    summary_data.append({
-        "metric": "Top 5 Countries Share (%)",
-        "value": f"{top_5_country['top_n_share_pct']}%"
-    })
+    summary_data.append(
+        {"metric": "Top 5 Countries Share (%)", "value": f"{top_5_country['top_n_share_pct']}%"}
+    )
 
     hhi_country = concentration_index(df, "country_code")
-    summary_data.append({
-        "metric": "Country Concentration (HHI)",
-        "value": f"{hhi_country:.2f}"
-    })
+    summary_data.append({"metric": "Country Concentration (HHI)", "value": f"{hhi_country:.2f}"})
 
     # Top categories
     if "country_code" in df.columns and "amount_usd_millions" in df.columns:
         country_agg = aggregation_by_country(df)
         if len(country_agg) > 0:
             top_country = country_agg.iloc[0]
-            summary_data.append({
-                "metric": "Top Country",
-                "value": f"{top_country['country_code']} (${top_country['total_issuance_usd_millions']:,.2f}M)"
-            })
+            summary_data.append(
+                {
+                    "metric": "Top Country",
+                    "value": f"{top_country['country_code']} (${top_country['total_issuance_usd_millions']:,.2f}M)",
+                }
+            )
 
     if "issue_date" in df.columns:
         year_agg = aggregation_by_year(df)
         if len(year_agg) > 0:
             # Find year with highest issuance
-            if "issuance_amount_usd_millions" in year_agg.columns and year_agg["issuance_amount_usd_millions"].notna().any():
-                top_year = year_agg.sort_values("issuance_amount_usd_millions", ascending=False).iloc[0]
-                summary_data.append({
-                    "metric": "Top Year",
-                    "value": f"{int(top_year['year'])} (${top_year['issuance_amount_usd_millions']:,.2f}M)"
-                })
+            if (
+                "issuance_amount_usd_millions" in year_agg.columns
+                and year_agg["issuance_amount_usd_millions"].notna().any()
+            ):
+                top_year = year_agg.sort_values(
+                    "issuance_amount_usd_millions", ascending=False
+                ).iloc[0]
+                summary_data.append(
+                    {
+                        "metric": "Top Year",
+                        "value": f"{int(top_year['year'])} (${top_year['issuance_amount_usd_millions']:,.2f}M)",
+                    }
+                )
 
     if "use_of_proceeds" in df.columns:
         proceeds_agg = aggregation_by_category(df, "use_of_proceeds")
         if len(proceeds_agg) > 0 and "total_issuance_usd_millions" in proceeds_agg.columns:
             top_proceeds = proceeds_agg.iloc[0]
             if pd.notna(top_proceeds["total_issuance_usd_millions"]):
-                summary_data.append({
-                    "metric": "Top Project Type",
-                    "value": f"{top_proceeds['use_of_proceeds']} (${top_proceeds['total_issuance_usd_millions']:,.2f}M)"
-                })
+                summary_data.append(
+                    {
+                        "metric": "Top Project Type",
+                        "value": f"{top_proceeds['use_of_proceeds']} (${top_proceeds['total_issuance_usd_millions']:,.2f}M)",
+                    }
+                )
 
     return pd.DataFrame(summary_data)
