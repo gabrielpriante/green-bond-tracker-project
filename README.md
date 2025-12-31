@@ -184,6 +184,71 @@ Validation checks include:
 
 See [`docs/data/schema.md`](docs/data/schema.md) for complete schema documentation.
 
+## Portfolio Analytics
+
+The toolkit includes a comprehensive **analytics module** for portfolio-style metrics and insights:
+
+```bash
+# Generate portfolio summary with metrics and diagnostics
+python -m src.cli summary data/green_bonds.csv
+
+# Specify custom output directory
+python -m src.cli summary data/green_bonds.csv --output-dir reports/
+
+# Get JSON output
+python -m src.cli summary data/green_bonds.csv --json
+```
+
+**What you get:**
+
+- **Console Output:** Human-readable summary table with:
+  - Headline totals (bonds, issuance, issuers, countries, year range)
+  - Data quality metrics (% missing values per field)
+  - Concentration metrics (top 5 countries share, HHI index)
+  - Top categories (top country, year, project type)
+
+- **CSV Exports:**
+  - `outputs/portfolio_summary.csv` - Key metrics for reports
+  - `outputs/data_coverage_report.csv` - Field-level data quality
+
+**Key Metrics:**
+
+- `issuance_overview()` - Total bonds, amounts, year range, unique issuers, data quality
+- `aggregation_by_country()` - Bond counts and totals by country with market share
+- `aggregation_by_year()` - Year-over-year growth analysis
+- `aggregation_by_category()` - Generic aggregation for any dimension (project type, certification, etc.)
+- `top_n_concentration()` - Top-N concentration analysis
+- `concentration_index()` - Herfindahl-Hirschman Index for market concentration
+- `data_coverage_report()` - Field-level completeness diagnostics
+
+**Python API:**
+
+```python
+from src.data_loader import load_green_bonds
+from src.analytics.metrics import (
+    issuance_overview,
+    aggregation_by_country,
+    portfolio_summary_table,
+)
+
+df = load_green_bonds("data/green_bonds.csv")
+
+# Get overview
+overview = issuance_overview(df)
+print(f"Total bonds: {overview['total_bonds']}")
+print(f"Year range: {overview['year_range']}")
+
+# Analyze by country
+countries = aggregation_by_country(df)
+print(countries.head())
+
+# Generate export-ready summary
+summary = portfolio_summary_table(df)
+summary.to_csv("my_summary.csv", index=False)
+```
+
+See [`docs/analytics/portfolio_metrics.md`](docs/analytics/portfolio_metrics.md) for detailed metric definitions, interpretations, and limitations.
+
 ## Project Structure
 
 ```
@@ -196,6 +261,9 @@ green-bond-tracker-project/
 │   └── countries_geo.json      # Country geometries with ISO codes
 ├── src/                        # Python source code
 │   ├── __init__.py
+│   ├── analytics/              # Portfolio analytics module
+│   │   ├── __init__.py
+│   │   └── metrics.py          # Portfolio metrics and diagnostics
 │   ├── data_loader.py          # Data loading and basic validation
 │   ├── schema.py               # Schema definitions (single source of truth)
 │   ├── validation.py           # Enhanced validation with row-level flags
@@ -209,6 +277,8 @@ green-bond-tracker-project/
 │   ├── README.md
 │   ├── CONTRIBUTING.md         # Contributing guidelines
 │   ├── ROADMAP.md              # Project roadmap
+│   ├── analytics/
+│   │   └── portfolio_metrics.md # Portfolio metrics documentation
 │   ├── data/
 │   │   └── schema.md           # Data schema documentation
 │   └── arcgis/
