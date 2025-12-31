@@ -120,6 +120,12 @@ def summary(
         Path("data/green_bonds.csv"),
         help="Path to the green bonds CSV file",
     ),
+    output_dir: Path = typer.Option(
+        Path("outputs"),
+        "--output-dir",
+        "-o",
+        help="Directory to save summary CSVs",
+    ),
     json_output: bool = typer.Option(
         False,
         "--json",
@@ -127,73 +133,80 @@ def summary(
     ),
 ):
     """
-    Print summary statistics for green bond data.
+    Generate portfolio analytics and summary statistics for green bond data.
 
-    Shows:
-    - Total number of bonds
-    - Total and average amounts
-    - Number of unique issuers and countries
-    - Date range
-    - Top countries by amount
+    Displays:
+    - Portfolio overview (total bonds, issuance, issuers, countries, data quality)
+    - Concentration metrics (top 5 countries share, HHI)
+    - Top categories (top country, year, project type)
+    
+    Outputs:
+    - Console: Human-readable summary table
+    - CSV: outputs/portfolio_summary.csv
+    - CSV: outputs/data_coverage_report.csv
     """
-    from .data_loader import get_summary_statistics, load_green_bonds
+    from .analytics.metrics import data_coverage_report, portfolio_summary_table
+    from .data_loader import load_green_bonds
 
-    console.print(f"\n[bold cyan]Analyzing:[/bold cyan] {csv_path}")
+    console.print(f"\n[bold cyan]Portfolio Analytics:[/bold cyan] {csv_path}")
 
     try:
         # Load data
         df = load_green_bonds(str(csv_path))
+        console.print(f"[green]✓[/green] Loaded {len(df)} records")
 
-        # Get statistics
-        stats = get_summary_statistics(df)
+        # Generate portfolio summary table
+        summary_table = portfolio_summary_table(df)
+        
+        # Generate data coverage report
+        coverage_report = data_coverage_report(df)
 
         if json_output:
             import json
 
-            # Convert datetime objects to strings for JSON serialization
-            stats_json = stats.copy()
-            if "earliest_issue" in stats_json:
-                stats_json["earliest_issue"] = str(stats_json["earliest_issue"])
-            if "latest_issue" in stats_json:
-                stats_json["latest_issue"] = str(stats_json["latest_issue"])
-
-            console.print(json.dumps(stats_json, indent=2))
+            output = {
+                "portfolio_summary": summary_table.to_dict(orient="records"),
+                "data_coverage": coverage_report.to_dict(orient="records"),
+            }
+            console.print(json.dumps(output, indent=2))
         else:
-            # Create a nice table
-            table = Table(title="Green Bond Summary Statistics", show_header=True)
+            # Display portfolio summary
+            console.print("\n[bold cyan]Portfolio Summary:[/bold cyan]")
+            table = Table(show_header=True)
             table.add_column("Metric", style="cyan", no_wrap=True)
             table.add_column("Value", style="green")
 
-            table.add_row("Total Bonds", str(stats["total_bonds"]))
-            table.add_row(
-                "Total Amount (USD Millions)",
-                f"${stats['total_amount_usd_millions']:,.2f}",
-            )
-            table.add_row(
-                "Average Bond Size (USD Millions)",
-                f"${stats['average_bond_size_usd_millions']:,.2f}",
-            )
-            table.add_row(
-                "Median Bond Size (USD Millions)",
-                f"${stats['median_bond_size_usd_millions']:,.2f}",
-            )
-            table.add_row("Unique Issuers", str(stats["unique_issuers"]))
-            table.add_row("Unique Countries", str(stats["unique_countries"]))
-
-            if "earliest_issue" in stats:
-                table.add_row("Earliest Issue", str(stats["earliest_issue"].date()))
-                table.add_row("Latest Issue", str(stats["latest_issue"].date()))
+            for _, row in summary_table.iterrows():
+                table.add_row(row["metric"], row["value"])
 
             console.print(table)
 
-            # Top countries
-            if "top_5_countries" in stats and stats["top_5_countries"]:
-                console.print("\n[bold cyan]Top 5 Countries by Amount:[/bold cyan]")
-                for country, amount in stats["top_5_countries"].items():
-                    console.print(f"  {country}: ${amount:,.2f}M")
+            # Display data coverage highlights
+            console.print("\n[bold cyan]Data Coverage Highlights:[/bold cyan]")
+            low_coverage = coverage_report[coverage_report["pct_non_null"] < 80]
+            if len(low_coverage) > 0:
+                console.print("[yellow]⚠ Fields with low coverage (<80%):[/yellow]")
+                for _, row in low_coverage.iterrows():
+                    console.print(f"  • {row['column_name']}: {row['pct_non_null']:.1f}%")
+            else:
+                console.print("[green]✓ All fields have good coverage (>=80%)[/green]")
+
+        # Save to CSV files
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        summary_path = output_dir / "portfolio_summary.csv"
+        summary_table.to_csv(summary_path, index=False)
+        console.print(f"\n[green]✓[/green] Portfolio summary saved to: {summary_path}")
+        
+        coverage_path = output_dir / "data_coverage_report.csv"
+        coverage_report.to_csv(coverage_path, index=False)
+        console.print(f"[green]✓[/green] Data coverage report saved to: {coverage_path}")
 
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}")
+        import traceback
+
+        console.print(traceback.format_exc())
         raise typer.Exit(code=1)
 
 
