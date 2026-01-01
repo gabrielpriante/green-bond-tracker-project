@@ -8,6 +8,8 @@ import re
 import subprocess
 import sys
 
+import src
+
 
 def strip_ansi(text):
     """Remove ANSI escape codes from text."""
@@ -74,7 +76,7 @@ class TestCLISmokeTests:
             text=True,
         )
         assert result.returncode == 0
-        assert "0.2.0" in result.stdout
+        assert src.__version__ in result.stdout
 
     def test_package_imports(self):
         """Test that the package can be imported."""
@@ -84,4 +86,4 @@ class TestCLISmokeTests:
             text=True,
         )
         assert result.returncode == 0
-        assert "0.2.0" in result.stdout
+        assert src.__version__ in result.stdout
