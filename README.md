@@ -42,6 +42,9 @@ make install
 After installation, use the `gbt` command to work with green bond data:
 
 ```bash
+# Show version
+gbt --version
+
 # Validate your bond data
 gbt validate --input data/green_bonds.csv
 
@@ -49,16 +52,16 @@ gbt validate --input data/green_bonds.csv
 gbt validate --input data/green_bonds.csv --output validation_report.csv --verbose
 
 # Generate portfolio summary statistics
-gbt summary --input data/green_bonds.csv --outdir outputs/
+gbt summary --input data/green_bonds.csv --output-dir outputs/
 
 # Get summary as JSON
 gbt summary --input data/green_bonds.csv --json
 
 # Generate interactive map (requires folium: pip install green-bond-tracker[interactive])
-gbt map --input data/green_bonds.csv --out outputs/bonds_map.html
+gbt map --input data/green_bonds.csv --output outputs/bonds_map.html
 
 # Generate all static visualizations
-gbt viz --input data/green_bonds.csv --outdir outputs/
+gbt viz --input data/green_bonds.csv --output-dir outputs/
 
 # Show help for any command
 gbt --help
@@ -396,25 +399,31 @@ pre-commit run --all-files                       # Run pre-commit hooks
 ### Commands
 
 ```bash
+# Show version
+gbt --version
+
 # Validate data
 gbt validate --input <path> [--output report.csv] [--verbose]
 
 # Show statistics
-gbt summary [--input <path>] [--outdir <dir>] [--json]
+gbt summary [--input <path>] [--output-dir <dir>] [--json]
 
 # Generate interactive map
-gbt map --input <path> --out <file.html>
+gbt map --input <path> --output <file.html>
 
 # Generate visualizations
-gbt viz [--input <path>] [--outdir <dir>] [--interactive]
+gbt viz [--input <path>] [--output-dir <dir>] [--interactive]
 
-# Show version
+# Show version (alternative)
 gbt version
 ```
 
 ### Examples
 
 ```bash
+# Show version
+gbt --version
+
 # Validate with detailed report
 gbt validate --input data/green_bonds.csv --output validation_report.csv -v
 
@@ -422,16 +431,20 @@ gbt validate --input data/green_bonds.csv --output validation_report.csv -v
 gbt summary --input data/green_bonds.csv --json
 
 # Generate interactive map
-gbt map --input data/green_bonds.csv --out outputs/map.html
+gbt map --input data/green_bonds.csv --output outputs/map.html
 
 # Generate all static visualizations
-gbt viz --input data/green_bonds.csv --outdir outputs/
+gbt viz --input data/green_bonds.csv --output-dir outputs/
 ```
 
 ### Legacy Commands (still supported)
 
 For backward compatibility, you can also use:
 ```bash
+# Legacy greenbond command (deprecated, use gbt instead)
+greenbond validate --input <path>
+
+# Python module invocation
 python -m src.cli validate <csv_path> [--output report.csv] [--verbose]
 python -m src.cli summary [csv_path] [--json]
 python -m src.cli viz [csv_path] [--output-dir DIR] [--interactive]
