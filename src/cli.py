@@ -6,6 +6,7 @@ This module provides a CLI for validating, analyzing, and visualizing green bond
 Note: This is an educational project and should not be used for investment advice.
 """
 
+import sys
 from pathlib import Path
 
 import typer
@@ -20,6 +21,34 @@ app = typer.Typer(
 console = Console()
 
 
+def version_callback(value: bool):
+    """Print version and exit."""
+    if value:
+        from . import __version__
+
+        console.print(f"Green Bond Tracker v{__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-v",
+        help="Show version and exit",
+        callback=version_callback,
+        is_eager=True,
+    ),
+):
+    """Green Bond Tracker - Educational toolkit for green bond analysis."""
+    # Show deprecation warning if invoked via greenbond
+    if len(sys.argv) > 0 and "greenbond" in sys.argv[0]:
+        console.print(
+            "[yellow]Note:[/yellow] 'greenbond' is deprecated; please use 'gbt' instead.\n"
+        )
+
+
 @app.command()
 def validate(
     input_path: Path = typer.Option(
@@ -28,6 +57,8 @@ def validate(
         "-i",
         help="Path to the green bonds CSV file",
         exists=True,
+        dir_okay=False,
+        readable=True,
     ),
     output: Path | None = typer.Option(
         None,
@@ -124,9 +155,9 @@ def summary(
         "-i",
         help="Path to the green bonds CSV file",
     ),
-    outdir: Path = typer.Option(
+    output_dir: Path = typer.Option(
         Path("outputs"),
-        "--outdir",
+        "--output-dir",
         "-o",
         help="Directory to save summary CSVs",
     ),
@@ -196,13 +227,13 @@ def summary(
                 console.print("[green]✓ All fields have good coverage (>=80%)[/green]")
 
         # Save to CSV files
-        outdir.mkdir(parents=True, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-        summary_path = outdir / "portfolio_summary.csv"
+        summary_path = output_dir / "portfolio_summary.csv"
         summary_table.to_csv(summary_path, index=False)
         console.print(f"\n[green]✓[/green] Portfolio summary saved to: {summary_path}")
 
-        coverage_path = outdir / "data_coverage_report.csv"
+        coverage_path = output_dir / "data_coverage_report.csv"
         coverage_report.to_csv(coverage_path, index=False)
         console.print(f"[green]✓[/green] Data coverage report saved to: {coverage_path}")
 
@@ -222,10 +253,12 @@ def map(
         "-i",
         help="Path to the green bonds CSV file",
         exists=True,
+        dir_okay=False,
+        readable=True,
     ),
-    out: Path = typer.Option(
+    output: Path = typer.Option(
         ...,
-        "--out",
+        "--output",
         "-o",
         help="Output path for the interactive HTML map",
     ),
@@ -246,7 +279,7 @@ def map(
 
     console.print("\n[bold cyan]Creating interactive map[/bold cyan]")
     console.print(f"  Input: {input_path}")
-    console.print(f"  Output: {out}")
+    console.print(f"  Output: {output}")
 
     try:
         # Check if folium is available
@@ -268,15 +301,15 @@ def map(
         console.print(f"[green]✓[/green] Loaded {len(bonds)} bonds and {len(countries)} countries")
 
         # Create output directory if needed
-        out.parent.mkdir(parents=True, exist_ok=True)
+        output.parent.mkdir(parents=True, exist_ok=True)
 
         # Generate interactive map
         console.print("\n[cyan]Generating interactive map...[/cyan]")
         create_interactive_choropleth_map(
             geo_bonds,
-            output_path=str(out),
+            output_path=str(output),
         )
-        console.print(f"\n[bold green]✓ Interactive map saved to:[/bold green] {out}")
+        console.print(f"\n[bold green]✓ Interactive map saved to:[/bold green] {output}")
 
     except typer.Exit:
         raise
@@ -302,9 +335,9 @@ def viz(
         "-g",
         help="Path to the countries GeoJSON file",
     ),
-    outdir: Path = typer.Option(
+    output_dir: Path = typer.Option(
         Path("outputs"),
-        "--outdir",
+        "--output-dir",
         "-o",
         help="Directory to save visualizations",
     ),
@@ -331,7 +364,7 @@ def viz(
     console.print("\n[bold cyan]Creating visualizations[/bold cyan]")
     console.print(f"  Data: {input_path}")
     console.print(f"  Geo: {geo_path}")
-    console.print(f"  Output: {outdir}")
+    console.print(f"  Output: {output_dir}")
 
     try:
         # Load data
@@ -343,11 +376,11 @@ def viz(
         console.print(f"[green]✓[/green] Loaded {len(bonds)} bonds and {len(countries)} countries")
 
         # Create output directory
-        outdir.mkdir(parents=True, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate static visualizations
         console.print("\n[cyan]Generating static visualizations...[/cyan]")
-        saved_files = create_and_save_all_visuals(bonds, geo_bonds, str(outdir))
+        saved_files = create_and_save_all_visuals(bonds, geo_bonds, str(output_dir))
 
         console.print("\n[bold green]✓ Static visualizations created:[/bold green]")
         for name, path in saved_files.items():
@@ -359,7 +392,7 @@ def viz(
                 from .interactive import create_interactive_choropleth_map
 
                 console.print("\n[cyan]Generating interactive map...[/cyan]")
-                interactive_path = outdir / "green_bonds_interactive_map.html"
+                interactive_path = output_dir / "green_bonds_interactive_map.html"
                 create_interactive_choropleth_map(
                     geo_bonds,
                     output_path=str(interactive_path),
@@ -371,7 +404,7 @@ def viz(
                     "Install with: pip install 'green-bond-tracker[interactive]'"
                 )
 
-        console.print(f"\n[bold green]✓ All visualizations saved to:[/bold green] {outdir}")
+        console.print(f"\n[bold green]✓ All visualizations saved to:[/bold green] {output_dir}")
 
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}")
