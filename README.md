@@ -27,33 +27,49 @@ A lightweight, open-source tracker for green bonds and sustainability-linked pro
 git clone https://github.com/gabrielpriante/green-bond-tracker-project.git
 cd green-bond-tracker-project
 
-# Install dependencies (basic)
-pip install -r requirements.txt
+# Install the package in editable mode (recommended for development)
+pip install -e .
 
-# OR install with CLI and all features
+# OR install with all optional features (interactive maps, notebooks, dev tools)
 pip install -e ".[all]"
+
+# OR use the Makefile
+make install
 ```
 
 ### Command Line Interface (Recommended)
 
-The easiest way to use the Green Bond Tracker is through the CLI:
+After installation, use the `gbt` command to work with green bond data:
 
 ```bash
 # Validate your bond data
-python -m src.cli validate data/green_bonds.csv
+gbt validate --input data/green_bonds.csv
 
-# Show summary statistics
-python -m src.cli summary data/green_bonds.csv
+# Get detailed validation report
+gbt validate --input data/green_bonds.csv --output validation_report.csv --verbose
 
-# Generate all visualizations
-python -m src.cli viz data/green_bonds.csv --output-dir outputs/
+# Generate portfolio summary statistics
+gbt summary --input data/green_bonds.csv --outdir outputs/
 
-# Generate interactive map (requires folium)
-python -m src.cli viz data/green_bonds.csv --interactive
+# Get summary as JSON
+gbt summary --input data/green_bonds.csv --json
 
-# Get detailed validation report with row-level flags
-python -m src.cli validate data/green_bonds.csv --output validation_report.csv --verbose
+# Generate interactive map (requires folium: pip install green-bond-tracker[interactive])
+gbt map --input data/green_bonds.csv --out outputs/bonds_map.html
+
+# Generate all static visualizations
+gbt viz --input data/green_bonds.csv --outdir outputs/
+
+# Show help for any command
+gbt --help
+gbt validate --help
 ```
+
+**Outputs:**
+- `gbt validate`: Validates data quality, prints summary, optional CSV report with row-level flags
+- `gbt summary`: Portfolio metrics (console table + CSV files in `outputs/`)
+- `gbt map`: Interactive HTML choropleth map saved to specified file
+- `gbt viz`: Static PNG visualizations saved to specified directory
 
 ### Python API
 
@@ -362,20 +378,17 @@ See [`pyproject.toml`](pyproject.toml) for dependency management.
 ## Testing
 
 ```bash
-# Run tests
-pytest tests/
+# Using Makefile (recommended)
+make test        # Run tests with coverage
+make lint        # Run linter checks
+make format      # Format code
 
-# Run tests with coverage
-pytest tests/ --cov=src --cov-report=term-missing
-
-# Run linting
-ruff check src/ tests/
-
-# Run formatting
-ruff format src/ tests/
-
-# Run pre-commit hooks
-pre-commit run --all-files
+# Or manually
+pytest tests/                                    # Run tests
+pytest tests/ --cov=src --cov-report=term-missing  # With coverage
+ruff check src/ tests/                           # Lint
+ruff format src/ tests/                          # Format
+pre-commit run --all-files                       # Run pre-commit hooks
 ```
 
 ## CLI Reference
@@ -384,29 +397,44 @@ pre-commit run --all-files
 
 ```bash
 # Validate data
-python -m src.cli validate <csv_path> [--output report.csv] [--verbose]
+gbt validate --input <path> [--output report.csv] [--verbose]
 
 # Show statistics
-python -m src.cli summary [csv_path] [--json]
+gbt summary [--input <path>] [--outdir <dir>] [--json]
+
+# Generate interactive map
+gbt map --input <path> --out <file.html>
 
 # Generate visualizations
-python -m src.cli viz [csv_path] [--output-dir DIR] [--interactive]
+gbt viz [--input <path>] [--outdir <dir>] [--interactive]
 
 # Show version
-python -m src.cli version
+gbt version
 ```
 
 ### Examples
 
 ```bash
 # Validate with detailed report
-python -m src.cli validate data/green_bonds.csv --output validation_report.csv -v
+gbt validate --input data/green_bonds.csv --output validation_report.csv -v
 
 # Get summary as JSON
-python -m src.cli summary data/green_bonds.csv --json
+gbt summary --input data/green_bonds.csv --json
 
-# Generate all visualizations including interactive map
-python -m src.cli viz data/green_bonds.csv --output-dir outputs/ --interactive
+# Generate interactive map
+gbt map --input data/green_bonds.csv --out outputs/map.html
+
+# Generate all static visualizations
+gbt viz --input data/green_bonds.csv --outdir outputs/
+```
+
+### Legacy Commands (still supported)
+
+For backward compatibility, you can also use:
+```bash
+python -m src.cli validate <csv_path> [--output report.csv] [--verbose]
+python -m src.cli summary [csv_path] [--json]
+python -m src.cli viz [csv_path] [--output-dir DIR] [--interactive]
 ```
 
 ## Contributing

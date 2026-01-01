@@ -54,6 +54,7 @@ all = [
 
 [project.scripts]
 greenbond = "src.cli:app"
+gbt = "src.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["."]
