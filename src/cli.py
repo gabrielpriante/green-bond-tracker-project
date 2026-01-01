@@ -253,9 +253,7 @@ def map(
         try:
             from .interactive import create_interactive_choropleth_map
         except ImportError:
-            console.print(
-                "\n[bold red]Error:[/bold red] Interactive maps require folium."
-            )
+            console.print("\n[bold red]Error:[/bold red] Interactive maps require folium.")
             console.print(
                 "Install with: [cyan]pip install 'green-bond-tracker[interactive]'[/cyan]"
             )
