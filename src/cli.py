@@ -6,6 +6,7 @@ This module provides a CLI for validating, analyzing, and visualizing green bond
 Note: This is an educational project and should not be used for investment advice.
 """
 
+import sys
 from pathlib import Path
 
 import typer
@@ -13,19 +14,51 @@ from rich.console import Console
 from rich.table import Table
 
 app = typer.Typer(
-    name="greenbond",
+    name="gbt",
     help="Green Bond Tracker - Educational toolkit for green bond analysis",
     add_completion=False,
 )
 console = Console()
 
 
+def version_callback(value: bool):
+    """Print version and exit."""
+    if value:
+        from . import __version__
+
+        console.print(f"Green Bond Tracker v{__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-v",
+        help="Show version and exit",
+        callback=version_callback,
+        is_eager=True,
+    ),
+):
+    """Green Bond Tracker - Educational toolkit for green bond analysis."""
+    # Show deprecation warning if invoked via greenbond
+    if len(sys.argv) > 0 and "greenbond" in sys.argv[0]:
+        console.print(
+            "[yellow]Note:[/yellow] 'greenbond' is deprecated; please use 'gbt' instead.\n"
+        )
+
+
 @app.command()
 def validate(
-    csv_path: Path = typer.Argument(
+    input_path: Path = typer.Option(
         ...,
+        "--input",
+        "-i",
         help="Path to the green bonds CSV file",
         exists=True,
+        dir_okay=False,
+        readable=True,
     ),
     output: Path | None = typer.Option(
         None,
@@ -55,11 +88,11 @@ def validate(
     from .data_loader import load_green_bonds
     from .validation import validate_bond_data_enhanced
 
-    console.print(f"\n[bold cyan]Validating:[/bold cyan] {csv_path}")
+    console.print(f"\n[bold cyan]Validating:[/bold cyan] {input_path}")
 
     try:
         # Load data
-        df = load_green_bonds(str(csv_path))
+        df = load_green_bonds(str(input_path))
         console.print(f"[green]✓[/green] Loaded {len(df)} records")
 
         # Validate
@@ -116,8 +149,10 @@ def validate(
 
 @app.command()
 def summary(
-    csv_path: Path = typer.Argument(
+    input_path: Path = typer.Option(
         Path("data/green_bonds.csv"),
+        "--input",
+        "-i",
         help="Path to the green bonds CSV file",
     ),
     output_dir: Path = typer.Option(
@@ -148,11 +183,11 @@ def summary(
     from .analytics.metrics import data_coverage_report, portfolio_summary_table
     from .data_loader import load_green_bonds
 
-    console.print(f"\n[bold cyan]Portfolio Analytics:[/bold cyan] {csv_path}")
+    console.print(f"\n[bold cyan]Portfolio Analytics:[/bold cyan] {input_path}")
 
     try:
         # Load data
-        df = load_green_bonds(str(csv_path))
+        df = load_green_bonds(str(input_path))
         console.print(f"[green]✓[/green] Loaded {len(df)} records")
 
         # Generate portfolio summary table
@@ -211,9 +246,87 @@ def summary(
 
 
 @app.command()
+def map(
+    input_path: Path = typer.Option(
+        ...,
+        "--input",
+        "-i",
+        help="Path to the green bonds CSV file",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        "-o",
+        help="Output path for the interactive HTML map",
+    ),
+    geo_path: Path = typer.Option(
+        Path("data/countries_geo.json"),
+        "--geo",
+        "-g",
+        help="Path to the countries GeoJSON file",
+    ),
+):
+    """
+    Generate an interactive choropleth map for green bond data.
+
+    Creates an interactive HTML map showing green bond distribution by country.
+    Requires folium to be installed (pip install green-bond-tracker[interactive]).
+    """
+    from .data_loader import join_bonds_with_geo, load_country_geometries, load_green_bonds
+
+    console.print("\n[bold cyan]Creating interactive map[/bold cyan]")
+    console.print(f"  Input: {input_path}")
+    console.print(f"  Output: {output}")
+
+    try:
+        # Check if folium is available
+        try:
+            from .interactive import create_interactive_choropleth_map
+        except ImportError:
+            console.print("\n[bold red]Error:[/bold red] Interactive maps require folium.")
+            console.print(
+                "Install with: [cyan]pip install 'green-bond-tracker[interactive]'[/cyan]"
+            )
+            raise typer.Exit(code=2)
+
+        # Load data
+        console.print("\n[cyan]Loading data...[/cyan]")
+        bonds = load_green_bonds(str(input_path))
+        countries = load_country_geometries(str(geo_path))
+        geo_bonds = join_bonds_with_geo(bonds, countries)
+
+        console.print(f"[green]✓[/green] Loaded {len(bonds)} bonds and {len(countries)} countries")
+
+        # Create output directory if needed
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+        # Generate interactive map
+        console.print("\n[cyan]Generating interactive map...[/cyan]")
+        create_interactive_choropleth_map(
+            geo_bonds,
+            output_path=str(output),
+        )
+        console.print(f"\n[bold green]✓ Interactive map saved to:[/bold green] {output}")
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        console.print(f"\n[bold red]Error:[/bold red] {e}")
+        import traceback
+
+        console.print(traceback.format_exc())
+        raise typer.Exit(code=1)
+
+
+@app.command()
 def viz(
-    csv_path: Path = typer.Argument(
+    input_path: Path = typer.Option(
         Path("data/green_bonds.csv"),
+        "--input",
+        "-i",
         help="Path to the green bonds CSV file",
     ),
     geo_path: Path = typer.Option(
@@ -231,7 +344,6 @@ def viz(
     interactive: bool = typer.Option(
         False,
         "--interactive",
-        "-i",
         help="Generate interactive map (requires folium)",
     ),
 ):
@@ -250,14 +362,14 @@ def viz(
     from .visuals import create_and_save_all_visuals
 
     console.print("\n[bold cyan]Creating visualizations[/bold cyan]")
-    console.print(f"  Data: {csv_path}")
+    console.print(f"  Data: {input_path}")
     console.print(f"  Geo: {geo_path}")
     console.print(f"  Output: {output_dir}")
 
     try:
         # Load data
         console.print("\n[cyan]Loading data...[/cyan]")
-        bonds = load_green_bonds(str(csv_path))
+        bonds = load_green_bonds(str(input_path))
         countries = load_country_geometries(str(geo_path))
         geo_bonds = join_bonds_with_geo(bonds, countries)
 
