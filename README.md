@@ -74,6 +74,100 @@ gbt validate --help
 - `gbt map`: Interactive HTML choropleth map saved to specified file
 - `gbt viz`: Static PNG visualizations saved to specified directory
 
+## Configuration
+
+The Green Bond Tracker uses a centralized YAML configuration system that allows you to adapt the tool to new datasets, paths, and environments without editing source code.
+
+### Configuration File
+
+The default configuration file is `config.yaml` in the repository root. This file contains:
+
+- **Paths**: Data input/output locations
+- **Schema**: Expected columns, data types, and validation rules
+- **Normalization**: How to process currency, date, and numeric fields
+- **Map**: Visualization settings and defaults
+- **Analytics**: Portfolio analysis parameters
+- **Output**: Filenames for generated reports
+
+### Using Custom Configuration
+
+You can override the default configuration by providing a custom YAML file:
+
+```bash
+# Use a custom configuration file
+gbt --config path/to/custom_config.yaml validate --input data.csv
+
+# All subcommands respect the --config option
+gbt --config custom.yaml summary
+gbt --config custom.yaml map --output my_map.html
+```
+
+### Example Configuration
+
+Here's a minimal example configuration:
+
+```yaml
+# Paths configuration
+paths:
+  raw_data: "data/green_bonds.csv"
+  geo_data: "data/countries_geo.json"
+  outputs: "outputs"
+  maps: "maps"
+
+# Schema configuration
+schema:
+  required_columns:
+    - bond_id
+    - issuer
+    - country_code
+    - amount_usd_millions
+  
+  optional_columns:
+    - issue_date
+    - maturity_date
+    - currency
+    - coupon_rate
+    - use_of_proceeds
+    - certification
+
+# Analytics configuration
+analytics:
+  top_n: 5  # Number of top items in concentration analysis
+  coverage_threshold: 80  # Minimum data coverage (%) for warnings
+
+# Output filenames
+output:
+  portfolio_summary: "portfolio_summary.csv"
+  data_coverage_report: "data_coverage_report.csv"
+```
+
+See `config.yaml` in the repository root for the complete default configuration with all available options and documentation.
+
+### Command-Line Overrides
+
+You can override configuration settings using command-line options:
+
+```bash
+# Override input path from config
+gbt validate --input custom_data.csv
+
+# Override output directory
+gbt summary --output-dir custom_outputs/
+
+# Override map output location
+gbt map --output custom_map.html
+
+# Override geographic data source
+gbt viz --geo custom_countries.json
+```
+
+### Backward Compatibility
+
+- If no configuration file is provided, the tool uses sensible defaults that match the current repository layout
+- All CLI commands work without a configuration file
+- Missing configuration values fall back to defaults with warning messages
+- Command-line options always take precedence over configuration file settings
+
 ### Python API
 
 For programmatic access, use the Python API:

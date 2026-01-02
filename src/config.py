@@ -387,9 +387,7 @@ def validate_config(config: Config) -> tuple[bool, list[str]]:
     # Validate coverage threshold is between 0 and 100
     threshold = config.analytics_coverage_threshold
     if threshold < 0 or threshold > 100:
-        errors.append(
-            f"analytics.coverage_threshold must be between 0 and 100, got {threshold}"
-        )
+        errors.append(f"analytics.coverage_threshold must be between 0 and 100, got {threshold}")
 
     # Validate map figsize has 2 elements
     figsize = config.map_figsize

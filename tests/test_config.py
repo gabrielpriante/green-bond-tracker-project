@@ -5,9 +5,6 @@ These tests verify that the configuration system works correctly,
 handles missing config files gracefully, and validates configuration properly.
 """
 
-import tempfile
-from pathlib import Path
-
 import pytest
 import yaml
 
@@ -307,7 +304,5 @@ class TestDefaultWarnings:
             warnings.simplefilter("always")
             _ = config.raw_data_path
             # Filter for our specific warning
-            relevant_warnings = [
-                warn for warn in w if "Using default" in str(warn.message)
-            ]
+            relevant_warnings = [warn for warn in w if "Using default" in str(warn.message)]
             assert len(relevant_warnings) == 0
