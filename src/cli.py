@@ -13,12 +13,17 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from .config import get_config
+
 app = typer.Typer(
     name="gbt",
     help="Green Bond Tracker - Educational toolkit for green bond analysis",
     add_completion=False,
 )
 console = Console()
+
+# Global state for config path (set in main callback)
+_config_path: Path | None = None
 
 
 def version_callback(value: bool):
@@ -32,6 +37,16 @@ def version_callback(value: bool):
 
 @app.callback()
 def main(
+    ctx: typer.Context,
+    config: Path | None = typer.Option(
+        None,
+        "--config",
+        "-c",
+        help="Path to configuration YAML file (default: config.yaml in repo root)",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+    ),
     version: bool = typer.Option(
         False,
         "--version",
@@ -42,6 +57,18 @@ def main(
     ),
 ):
     """Green Bond Tracker - Educational toolkit for green bond analysis."""
+    # Store config path globally for subcommands
+    global _config_path
+    _config_path = config
+
+    # Load config if provided
+    if config:
+        try:
+            get_config(config)
+        except Exception as e:
+            console.print(f"[bold red]Error loading configuration:[/bold red] {e}")
+            raise typer.Exit(code=1)
+
     # Show deprecation warning if invoked via greenbond
     if len(sys.argv) > 0 and "greenbond" in sys.argv[0]:
         console.print(
@@ -51,11 +78,11 @@ def main(
 
 @app.command()
 def validate(
-    input_path: Path = typer.Option(
-        ...,
+    input_path: Path | None = typer.Option(
+        None,
         "--input",
         "-i",
-        help="Path to the green bonds CSV file",
+        help="Path to the green bonds CSV file (overrides config)",
         exists=True,
         dir_okay=False,
         readable=True,
@@ -87,6 +114,11 @@ def validate(
     """
     from .data_loader import load_green_bonds
     from .validation import validate_bond_data_enhanced
+
+    # Get config and determine input path
+    config = get_config(_config_path)
+    if input_path is None:
+        input_path = Path(config.raw_data_path)
 
     console.print(f"\n[bold cyan]Validating:[/bold cyan] {input_path}")
 
@@ -149,17 +181,17 @@ def validate(
 
 @app.command()
 def summary(
-    input_path: Path = typer.Option(
-        Path("data/green_bonds.csv"),
+    input_path: Path | None = typer.Option(
+        None,
         "--input",
         "-i",
-        help="Path to the green bonds CSV file",
+        help="Path to the green bonds CSV file (overrides config)",
     ),
-    output_dir: Path = typer.Option(
-        Path("outputs"),
+    output_dir: Path | None = typer.Option(
+        None,
         "--output-dir",
         "-o",
-        help="Directory to save summary CSVs",
+        help="Directory to save summary CSVs (overrides config)",
     ),
     json_output: bool = typer.Option(
         False,
@@ -182,6 +214,13 @@ def summary(
     """
     from .analytics.metrics import data_coverage_report, portfolio_summary_table
     from .data_loader import load_green_bonds
+
+    # Get config and determine paths
+    config = get_config(_config_path)
+    if input_path is None:
+        input_path = Path(config.raw_data_path)
+    if output_dir is None:
+        output_dir = Path(config.outputs_dir)
 
     console.print(f"\n[bold cyan]Portfolio Analytics:[/bold cyan] {input_path}")
 
@@ -229,11 +268,11 @@ def summary(
         # Save to CSV files
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        summary_path = output_dir / "portfolio_summary.csv"
+        summary_path = output_dir / config.output_portfolio_summary
         summary_table.to_csv(summary_path, index=False)
         console.print(f"\n[green]✓[/green] Portfolio summary saved to: {summary_path}")
 
-        coverage_path = output_dir / "data_coverage_report.csv"
+        coverage_path = output_dir / config.output_data_coverage_report
         coverage_report.to_csv(coverage_path, index=False)
         console.print(f"[green]✓[/green] Data coverage report saved to: {coverage_path}")
 
@@ -247,26 +286,26 @@ def summary(
 
 @app.command()
 def map(
-    input_path: Path = typer.Option(
-        ...,
+    input_path: Path | None = typer.Option(
+        None,
         "--input",
         "-i",
-        help="Path to the green bonds CSV file",
+        help="Path to the green bonds CSV file (overrides config)",
         exists=True,
         dir_okay=False,
         readable=True,
     ),
-    output: Path = typer.Option(
-        ...,
+    output: Path | None = typer.Option(
+        None,
         "--output",
         "-o",
-        help="Output path for the interactive HTML map",
+        help="Output path for the interactive HTML map (overrides config)",
     ),
-    geo_path: Path = typer.Option(
-        Path("data/countries_geo.json"),
+    geo_path: Path | None = typer.Option(
+        None,
         "--geo",
         "-g",
-        help="Path to the countries GeoJSON file",
+        help="Path to the countries GeoJSON file (overrides config)",
     ),
 ):
     """
@@ -276,6 +315,15 @@ def map(
     Requires folium to be installed (pip install green-bond-tracker[interactive]).
     """
     from .data_loader import join_bonds_with_geo, load_country_geometries, load_green_bonds
+
+    # Get config and determine paths
+    config = get_config(_config_path)
+    if input_path is None:
+        input_path = Path(config.raw_data_path)
+    if geo_path is None:
+        geo_path = Path(config.geo_data_path)
+    if output is None:
+        output = Path(config.outputs_dir) / config.map_default_output
 
     console.print("\n[bold cyan]Creating interactive map[/bold cyan]")
     console.print(f"  Input: {input_path}")
@@ -323,23 +371,23 @@ def map(
 
 @app.command()
 def viz(
-    input_path: Path = typer.Option(
-        Path("data/green_bonds.csv"),
+    input_path: Path | None = typer.Option(
+        None,
         "--input",
         "-i",
-        help="Path to the green bonds CSV file",
+        help="Path to the green bonds CSV file (overrides config)",
     ),
-    geo_path: Path = typer.Option(
-        Path("data/countries_geo.json"),
+    geo_path: Path | None = typer.Option(
+        None,
         "--geo",
         "-g",
-        help="Path to the countries GeoJSON file",
+        help="Path to the countries GeoJSON file (overrides config)",
     ),
-    output_dir: Path = typer.Option(
-        Path("outputs"),
+    output_dir: Path | None = typer.Option(
+        None,
         "--output-dir",
         "-o",
-        help="Directory to save visualizations",
+        help="Directory to save visualizations (overrides config)",
     ),
     interactive: bool = typer.Option(
         False,
@@ -360,6 +408,15 @@ def viz(
     """
     from .data_loader import join_bonds_with_geo, load_country_geometries, load_green_bonds
     from .visuals import create_and_save_all_visuals
+
+    # Get config and determine paths
+    config = get_config(_config_path)
+    if input_path is None:
+        input_path = Path(config.raw_data_path)
+    if geo_path is None:
+        geo_path = Path(config.geo_data_path)
+    if output_dir is None:
+        output_dir = Path(config.outputs_dir)
 
     console.print("\n[bold cyan]Creating visualizations[/bold cyan]")
     console.print(f"  Data: {input_path}")
@@ -392,7 +449,7 @@ def viz(
                 from .interactive import create_interactive_choropleth_map
 
                 console.print("\n[cyan]Generating interactive map...[/cyan]")
-                interactive_path = output_dir / "green_bonds_interactive_map.html"
+                interactive_path = output_dir / config.map_default_output
                 create_interactive_choropleth_map(
                     geo_bonds,
                     output_path=str(interactive_path),
