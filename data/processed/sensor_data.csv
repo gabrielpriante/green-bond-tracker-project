@@ -1,0 +1,41 @@
+# Processed Environmental Sensor Data
+# Educational dataset for NOAA weather data integration demonstration
+#
+# Field Descriptions:
+# - sensor_id: Unique identifier for each sensor
+# - datetime: Timestamp of observation (YYYY-MM-DD HH:MM:SS)
+# - latitude: Sensor latitude in decimal degrees
+# - longitude: Sensor longitude in decimal degrees
+# - parameter: Environmental parameter measured
+# - value: Measured value
+# - unit: Unit of measurement
+# - quality_flag: Data quality indicator (OK, SUSPECT, INVALID)
+#
+sensor_id,datetime,latitude,longitude,parameter,value,unit,quality_flag
+SENSOR_001,2020-01-01 08:00:00,41.8781,-87.6298,air_quality_index,45,AQI,OK
+SENSOR_001,2020-01-01 09:00:00,41.8781,-87.6298,air_quality_index,48,AQI,OK
+SENSOR_001,2020-01-01 10:00:00,41.8781,-87.6298,air_quality_index,52,AQI,OK
+SENSOR_002,2020-01-01 08:00:00,41.8850,-87.6200,air_quality_index,43,AQI,OK
+SENSOR_002,2020-01-01 09:00:00,41.8850,-87.6200,air_quality_index,46,AQI,OK
+SENSOR_001,2020-01-02 08:00:00,41.8781,-87.6298,air_quality_index,55,AQI,OK
+SENSOR_001,2020-01-02 09:00:00,41.8781,-87.6298,air_quality_index,58,AQI,OK
+SENSOR_002,2020-01-02 08:00:00,41.8850,-87.6200,air_quality_index,51,AQI,OK
+SENSOR_001,2020-01-03 08:00:00,41.8781,-87.6298,air_quality_index,42,AQI,OK
+SENSOR_002,2020-01-03 08:00:00,41.8850,-87.6200,air_quality_index,40,AQI,OK
+SENSOR_001,2020-06-15 08:00:00,41.8781,-87.6298,air_quality_index,65,AQI,OK
+SENSOR_001,2020-06-15 09:00:00,41.8781,-87.6298,air_quality_index,68,AQI,OK
+SENSOR_002,2020-06-15 08:00:00,41.8850,-87.6200,air_quality_index,62,AQI,OK
+SENSOR_001,2020-12-31 08:00:00,41.8781,-87.6298,air_quality_index,38,AQI,OK
+SENSOR_002,2020-12-31 08:00:00,41.8850,-87.6200,air_quality_index,35,AQI,OK
+SENSOR_001,2021-01-01 08:00:00,41.8781,-87.6298,air_quality_index,40,AQI,OK
+SENSOR_002,2021-01-01 08:00:00,41.8850,-87.6200,air_quality_index,38,AQI,OK
+SENSOR_001,2021-06-15 08:00:00,41.8781,-87.6298,air_quality_index,70,AQI,OK
+SENSOR_002,2021-06-15 08:00:00,41.8850,-87.6200,air_quality_index,67,AQI,OK
+SENSOR_001,2021-12-31 08:00:00,41.8781,-87.6298,air_quality_index,42,AQI,OK
+SENSOR_002,2021-12-31 08:00:00,41.8850,-87.6200,air_quality_index,39,AQI,OK
+SENSOR_001,2022-01-01 08:00:00,41.8781,-87.6298,air_quality_index,45,AQI,OK
+SENSOR_002,2022-01-01 08:00:00,41.8850,-87.6200,air_quality_index,43,AQI,OK
+SENSOR_001,2022-06-15 08:00:00,41.8781,-87.6298,air_quality_index,72,AQI,OK
+SENSOR_002,2022-06-15 08:00:00,41.8850,-87.6200,air_quality_index,69,AQI,OK
+SENSOR_001,2022-12-31 08:00:00,41.8781,-87.6298,air_quality_index,48,AQI,OK
+SENSOR_002,2022-12-31 08:00:00,41.8850,-87.6200,air_quality_index,45,AQI,OK

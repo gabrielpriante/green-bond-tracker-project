@@ -268,6 +268,113 @@ summary.to_csv("my_summary.csv", index=False)
 
 See [`docs/analytics/portfolio_metrics.md`](docs/analytics/portfolio_metrics.md) for detailed metric definitions, interpretations, and limitations.
 
+## Weather Data (NOAA)
+
+**NEW:** The project now includes R-based scripts for ingesting NOAA weather data to support environmental sensor analysis and event attribution.
+
+### Overview
+
+Two R scripts automate the process of selecting an optimal NOAA weather station and downloading daily precipitation and temperature data for integration with environmental sensor observations.
+
+### Prerequisites
+
+**R Packages Required:**
+```r
+install.packages(c("tidyverse", "rnoaa", "geosphere", "yaml", "lubridate"))
+```
+
+**NOAA API Token (Recommended):**
+1. Get a free token at: https://www.ncdc.noaa.gov/cdo-web/token
+2. Set environment variable: `Sys.setenv(NOAA_TOKEN = 'your_token_here')`
+
+### Running the Workflow
+
+Execute the scripts in sequence:
+
+```r
+# Step 1: Select optimal NOAA weather station
+source("analysis/05_select_noaa_station.R")
+
+# Step 2: Download and process weather data
+source("analysis/06_download_noaa_weather.R")
+```
+
+Or from command line:
+```bash
+Rscript analysis/05_select_noaa_station.R
+Rscript analysis/06_download_noaa_weather.R
+```
+
+### What the Scripts Do
+
+**Script 1: Station Selection** (`analysis/05_select_noaa_station.R`)
+- Reads processed sensor data from `data/processed/sensor_data.csv`
+- Calculates study area centroid and sensor observation period
+- Queries NOAA GHCN-Daily stations within 50 km
+- Scores and ranks stations by distance, temporal overlap, and data completeness
+- Selects primary and backup stations
+- **Outputs:**
+  - `data/context/noaa_station_candidates.csv` - Full ranked candidate list
+  - `data/context/noaa_weather_config.yml` - Configuration for download script
+  - `docs/noaa_station_selection.md` - Selection methodology documentation
+
+**Script 2: Weather Download** (`analysis/06_download_noaa_weather.R`)
+- Reads configuration from `noaa_weather_config.yml`
+- Downloads GHCN-Daily data (PRCP, TMAX, TMIN) for selected station(s)
+- Fills gaps from backup station if primary has >10% missing data
+- Applies unit conversions (tenths mm → mm, tenths °C → °C)
+- Generates quality control flags (OK, PARTIAL, INVALID, EXTREME, etc.)
+- Creates complete daily time series
+- **Outputs:**
+  - `data/raw/noaa/ghcnd_primary_YYYYMMDD.csv` - Raw primary station data
+  - `data/raw/noaa/ghcnd_backup_YYYYMMDD.csv` - Raw backup station data (if used)
+  - `data/processed/noaa_daily_weather.csv` - Clean, analysis-ready daily weather
+  - `data/context/noaa_weather_qc_summary.csv` - QC summary statistics
+  - `docs/noaa_weather_data_dictionary.md` - Field definitions and data dictionary
+
+### Output Data Structure
+
+**Processed Weather Data** (`data/processed/noaa_daily_weather.csv`):
+- `date` - Observation date (YYYY-MM-DD)
+- `precipitation_mm` - Daily precipitation (mm)
+- `tmax_c` - Daily maximum temperature (°C)
+- `tmin_c` - Daily minimum temperature (°C)
+- `tmean_c` - Daily mean temperature: (tmax + tmin) / 2 (°C)
+- `data_quality_flag` - Quality indicator (OK, PARTIAL, INVALID, EXTREME, FILLED_FROM_BACKUP)
+- `source_station_id` - GHCN station ID
+- `source_notes` - Provenance tracking
+
+### Quality Control
+
+The workflow includes robust QC:
+- **Completeness checks:** Flags missing precipitation or temperature values
+- **Validity checks:** Flags invalid values (PRCP < 0, TMAX < TMIN)
+- **Extreme value detection:** Flags temperatures outside plausible bounds (-60°C to 60°C)
+- **Gap filling:** Uses backup station for missing values with full provenance tracking
+
+### Non-Negotiables Met
+
+✅ **NOAA GHCN-Daily observational data** (not NWR transmitters)  
+✅ **Deterministic, rerunnable, idempotent** scripts  
+✅ **Raw vs processed separation:** Raw → `data/raw/noaa/`, Processed → `data/processed/`  
+✅ **Explicit units and missingness** handling  
+✅ **Complete documentation** with data dictionaries  
+
+### Sample Sensor Data
+
+A sample processed sensor dataset is provided at `data/processed/sensor_data.csv` for demonstration. It contains air quality sensor observations from Chicago area (2020-2022) with latitude, longitude, and timestamps.
+
+For production use, replace this with your actual processed sensor data ensuring it has:
+- `datetime` column (timestamp)
+- `latitude` column (decimal degrees)
+- `longitude` column (decimal degrees)
+
+### Documentation
+
+- **Station Selection:** `docs/noaa_station_selection.md`
+- **Data Dictionary:** `docs/noaa_weather_data_dictionary.md`
+- **GHCN-Daily Info:** https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily
+
 ## Project Structure
 
 ```
@@ -275,9 +382,21 @@ green-bond-tracker-project/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml              # GitHub Actions CI/CD
-├── data/                       # Sample data files
+├── analysis/                   # R scripts for NOAA weather data
+│   ├── 05_select_noaa_station.R    # Station selection script
+│   └── 06_download_noaa_weather.R  # Weather download & processing
+├── data/                       # Data files
 │   ├── green_bonds.csv         # Green bond data with field descriptions
-│   └── countries_geo.json      # Country geometries with ISO codes
+│   ├── countries_geo.json      # Country geometries with ISO codes
+│   ├── raw/                    # Raw data (not committed)
+│   │   └── noaa/               # Raw NOAA weather downloads
+│   ├── processed/              # Processed, analysis-ready data
+│   │   ├── sensor_data.csv     # Sample environmental sensor data
+│   │   └── noaa_daily_weather.csv  # Processed weather data (generated)
+│   └── context/                # Configuration and metadata
+│       ├── noaa_station_candidates.csv  # Station ranking (generated)
+│       ├── noaa_weather_config.yml      # Weather config (generated)
+│       └── noaa_weather_qc_summary.csv  # QC summary (generated)
 ├── src/                        # Python source code
 │   ├── __init__.py
 │   ├── analytics/              # Portfolio analytics module
@@ -296,6 +415,8 @@ green-bond-tracker-project/
 │   ├── README.md
 │   ├── CONTRIBUTING.md         # Contributing guidelines
 │   ├── ROADMAP.md              # Project roadmap
+│   ├── noaa_station_selection.md      # NOAA station selection (generated)
+│   ├── noaa_weather_data_dictionary.md # Weather data dictionary (generated)
 │   ├── analytics/
 │   │   └── portfolio_metrics.md # Portfolio metrics documentation
 │   ├── data/

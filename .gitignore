@@ -206,3 +206,14 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 outputs/
+
+# R specific
+.Rhistory
+.RData
+.Rproj.user
+*.Rproj
+.Rproj.user/
+
+# Large raw data files (keep processed/context outputs)
+data/raw/noaa/*.csv
+!data/raw/noaa/.gitkeep
