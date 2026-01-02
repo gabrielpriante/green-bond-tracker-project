@@ -1,0 +1,167 @@
+# Green Bond Tracker - Configuration File
+#
+# This YAML file centralizes all configuration for the Green Bond Tracker,
+# allowing you to adapt the tool to new datasets, paths, and environments
+# without editing source code.
+#
+# Note: This is an educational project and should not be used for investment advice.
+
+# =============================================================================
+# PATHS CONFIGURATION
+# =============================================================================
+# Configure paths for data input and output locations
+paths:
+  # Raw data directory and files
+  raw_data: "data/green_bonds.csv"
+  
+  # Geographic data for mapping
+  geo_data: "data/countries_geo.json"
+  
+  # Output directories
+  outputs: "outputs"
+  maps: "maps"
+
+# =============================================================================
+# SCHEMA CONFIGURATION
+# =============================================================================
+# Define expected data structure, column names, and validation rules
+schema:
+  # Required columns (must be present and non-null)
+  required_columns:
+    - bond_id
+    - issuer
+    - country_code
+    - amount_usd_millions
+  
+  # Optional columns (may be present but can have null values)
+  optional_columns:
+    - issue_date
+    - maturity_date
+    - currency
+    - coupon_rate
+    - use_of_proceeds
+    - certification
+  
+  # Data types for validation
+  dtypes:
+    bond_id: string
+    issuer: string
+    country_code: string
+    amount_usd_millions: float
+    issue_date: date
+    maturity_date: date
+    currency: string
+    coupon_rate: float
+    use_of_proceeds: string
+    certification: string
+  
+  # Validation rules
+  validation:
+    # Country code must be 3-character ISO alpha-3
+    country_code:
+      min_length: 3
+      max_length: 3
+      pattern: "^[A-Z]{3}$"
+    
+    # Amount must be non-negative
+    amount_usd_millions:
+      min_value: 0.0
+    
+    # Coupon rate should be between 0 and 100%
+    coupon_rate:
+      min_value: 0.0
+      max_value: 100.0
+    
+    # Currency must be 3-character ISO 4217 code
+    currency:
+      min_length: 3
+      max_length: 3
+      pattern: "^[A-Z]{3}$"
+
+# =============================================================================
+# NORMALIZATION CONFIGURATION
+# =============================================================================
+# Configure how data should be normalized and processed
+normalization:
+  # Currency fields (specified in USD millions)
+  currency_fields:
+    - amount_usd_millions
+  
+  # Date fields (ISO 8601 format: YYYY-MM-DD)
+  date_fields:
+    - issue_date
+    - maturity_date
+  
+  # Numeric fields that should be treated as floats
+  numeric_fields:
+    - amount_usd_millions
+    - coupon_rate
+  
+  # String fields that should be stripped and normalized
+  string_fields:
+    - bond_id
+    - issuer
+    - country_code
+    - currency
+    - use_of_proceeds
+    - certification
+
+# =============================================================================
+# MAP CONFIGURATION
+# =============================================================================
+# Configure map generation and visualization settings
+map:
+  # Default output filename for interactive maps
+  default_output: "green_bonds_map.html"
+  
+  # Fields to include in map tooltips (hover information)
+  tooltip_fields:
+    - name
+    - total_amount_usd_millions
+    - bond_count
+    - avg_amount_usd_millions
+  
+  # Map styling
+  style:
+    # Default colormap for choropleth
+    colormap: "YlGn"
+    
+    # Figure size (width, height) in inches
+    figsize: [14, 8]
+    
+    # DPI for static maps
+    dpi: 300
+
+# =============================================================================
+# ANALYTICS CONFIGURATION
+# =============================================================================
+# Configure portfolio analytics and metrics
+analytics:
+  # Top N items to show in concentration analysis
+  top_n: 5
+  
+  # Minimum data coverage threshold (%) for quality warnings
+  coverage_threshold: 80
+  
+  # Default aggregation dimensions
+  aggregation_dimensions:
+    - country_code
+    - use_of_proceeds
+    - certification
+
+# =============================================================================
+# OUTPUT CONFIGURATION
+# =============================================================================
+# Configure output file names and formats
+output:
+  # Portfolio analytics outputs
+  portfolio_summary: "portfolio_summary.csv"
+  data_coverage_report: "data_coverage_report.csv"
+  
+  # Visualization outputs
+  project_type_chart: "project_type_distribution.png"
+  choropleth_amount: "green_bonds_choropleth_amount.png"
+  choropleth_count: "green_bonds_choropleth_count.png"
+  
+  # Validation outputs
+  validation_report: "validation_report.csv"
