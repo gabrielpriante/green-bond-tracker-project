@@ -5,6 +5,8 @@ These tests verify that the configuration system works correctly,
 handles missing config files gracefully, and validates configuration properly.
 """
 
+import warnings
+
 import pytest
 import yaml
 
@@ -298,7 +300,6 @@ class TestDefaultWarnings:
         """Test that no warning is shown when config provides path."""
         config = Config({"paths": {"raw_data": "custom.csv"}})
         # Should not warn since we provided a value
-        import warnings
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")

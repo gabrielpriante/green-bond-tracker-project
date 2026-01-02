@@ -51,7 +51,7 @@ class Config:
         if path == default and "paths" not in self._config:
             warnings.warn(
                 f"Using default raw_data path: {default}. "
-                "Consider setting 'paths.raw_data' in config.yaml",
+                f"Consider setting 'paths.raw_data' in config.yaml",
                 stacklevel=2,
             )
         return path
@@ -64,7 +64,7 @@ class Config:
         if path == default and "paths" not in self._config:
             warnings.warn(
                 f"Using default geo_data path: {default}. "
-                "Consider setting 'paths.geo_data' in config.yaml",
+                f"Consider setting 'paths.geo_data' in config.yaml",
                 stacklevel=2,
             )
         return path
@@ -346,7 +346,7 @@ def load_config(config_path: str | Path | None = None) -> Config:
     if missing_sections:
         warnings.warn(
             f"Configuration is missing sections: {missing_sections}. "
-            "Using defaults for missing sections.",
+            f"Using defaults for missing sections.",
             stacklevel=2,
         )
 
