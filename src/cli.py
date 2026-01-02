@@ -13,7 +13,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from .config import get_config, reset_config
+from .config import get_config
 
 app = typer.Typer(
     name="gbt",

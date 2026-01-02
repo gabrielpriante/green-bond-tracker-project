@@ -6,7 +6,6 @@ and that command-line options properly override configuration settings.
 """
 
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
