@@ -164,7 +164,9 @@ def validate(
         # Validate
         logger.info("Running validation checks...")
         result = validate_bond_data_enhanced(df)
-        logger.info(f"Validation complete: {len(result.errors)} errors, {len(result.warnings)} warnings")
+        logger.info(
+            f"Validation complete: {len(result.errors)} errors, {len(result.warnings)} warnings"
+        )
 
         # Print results
         if result.is_valid:
@@ -225,7 +227,9 @@ def validate(
         raise typer.Exit(code=1)
     except ValueError as e:
         console.print(f"\n[bold red]Invalid Data:[/bold red] {e}")
-        console.print("→ Verify the CSV has required columns (bond_id, issuer, country_code, amount_usd_millions)")
+        console.print(
+            "→ Verify the CSV has required columns (bond_id, issuer, country_code, amount_usd_millions)"
+        )
         logger.error(f"Invalid data: {e}")
         raise typer.Exit(code=1)
     except Exception as e:
@@ -342,7 +346,9 @@ def summary(
                 console.print("[yellow]⚠ Fields with low coverage (<80%):[/yellow]")
                 for _, row in low_coverage.iterrows():
                     console.print(f"  • {row['column_name']}: {row['pct_non_null']:.1f}%")
-                    logger.warning(f"Low data coverage for {row['column_name']}: {row['pct_non_null']:.1f}%")
+                    logger.warning(
+                        f"Low data coverage for {row['column_name']}: {row['pct_non_null']:.1f}%"
+                    )
             else:
                 console.print("[green]✓ All fields have good coverage (>=80%)[/green]")
                 logger.info("All fields have good data coverage (>=80%)")
@@ -368,7 +374,9 @@ def summary(
         raise typer.Exit(code=1)
     except ValueError as e:
         console.print(f"\n[bold red]Invalid Data:[/bold red] {e}")
-        console.print("→ Verify the CSV has required columns (bond_id, issuer, country_code, amount_usd_millions)")
+        console.print(
+            "→ Verify the CSV has required columns (bond_id, issuer, country_code, amount_usd_millions)"
+        )
         logger.error(f"Invalid data: {e}")
         raise typer.Exit(code=1)
     except Exception as e:
@@ -441,14 +449,19 @@ def map(
         # Check if folium is available
         try:
             from .interactive import create_interactive_choropleth_map
+
             logger.debug("Folium module loaded successfully")
         except ImportError as e:
-            console.print("\n[bold red]Feature Not Available:[/bold red] Interactive maps require folium.")
+            console.print(
+                "\n[bold red]Feature Not Available:[/bold red] Interactive maps require folium."
+            )
             console.print(
                 "Install with: [cyan]pip install 'green-bond-tracker[interactive]'[/cyan]"
             )
             logger.error(f"Folium not available: {e}")
-            logger.info("Suggestion: Install folium with: pip install 'green-bond-tracker[interactive]'")
+            logger.info(
+                "Suggestion: Install folium with: pip install 'green-bond-tracker[interactive]'"
+            )
             raise typer.Exit(code=2)
 
         # Load data
