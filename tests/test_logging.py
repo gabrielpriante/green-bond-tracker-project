@@ -6,12 +6,9 @@ import logging
 import subprocess
 import sys
 
-import pytest
-
 from src.logging_config import (
     format_validation_error,
     get_logger,
-    log_exception,
     setup_logging,
 )
 

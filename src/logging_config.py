@@ -10,7 +10,6 @@ Note: This is an educational project and should not be used for investment advic
 import logging
 import sys
 
-
 # Global logger instance
 _logger: logging.Logger | None = None
 
