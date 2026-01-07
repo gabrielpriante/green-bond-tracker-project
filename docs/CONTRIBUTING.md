@@ -91,6 +91,28 @@ ruff check src/ tests/
 python -m src.cli version
 ```
 
+### 5. Run Checks Locally (Before Pushing)
+
+Run these commands to ensure your changes will pass CI:
+
+```bash
+# Lint and format check
+ruff check src/ tests/
+ruff format --check src/ tests/
+
+# Run tests with coverage (as CI does)
+pytest tests/ -v --cov=src --cov-report=xml --cov-report=term
+```
+
+**Quick fix commands** if checks fail:
+```bash
+# Auto-fix linting issues
+ruff check --fix src/ tests/
+
+# Auto-format code
+ruff format src/ tests/
+```
+
 ## 🔧 How to Contribute
 
 ### 1. Create a Branch
