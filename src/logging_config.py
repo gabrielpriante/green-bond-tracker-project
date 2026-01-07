@@ -10,7 +10,8 @@ Note: This is an educational project and should not be used for investment advic
 import logging
 import sys
 
-# Global logger instance
+# Global logger instance (singleton pattern for centralized logging)
+# This ensures all modules use the same logger configuration
 _logger: logging.Logger | None = None
 
 
@@ -18,15 +19,19 @@ def get_logger(name: str = "green_bond_tracker") -> logging.Logger:
     """
     Get or create the application logger.
 
+    This function uses a singleton pattern to ensure all modules share
+    the same logger configuration. The name parameter is only used
+    on first call; subsequent calls return the same logger instance.
+
     Parameters
     ----------
     name : str, optional
-        Logger name. Default is "green_bond_tracker"
+        Logger name (used only on first initialization). Default is "green_bond_tracker"
 
     Returns
     -------
     logging.Logger
-        Configured logger instance
+        Configured logger instance (singleton)
     """
     global _logger
     if _logger is None:

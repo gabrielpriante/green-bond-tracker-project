@@ -130,7 +130,13 @@ class TestExitCodes:
         assert result.returncode == 0
 
     def test_file_not_found_exit_code(self):
-        """Test that file not found exits with code 2 (typer validation)."""
+        """Test that file not found exits with code 2 (typer validation).
+        
+        Note: Typer validates file existence before our code runs, so it
+        exits with code 2 (typer's validation error). If the file passes
+        typer's check but is not found by our code (e.g., race condition),
+        our code would exit with 1.
+        """
         result = subprocess.run(
             ["gbt", "validate", "--input", "nonexistent_file.csv"],
             capture_output=True,
