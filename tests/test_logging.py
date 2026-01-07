@@ -148,13 +148,12 @@ class TestExitCodes:
         # Typer validates file existence before our code runs
         assert result.returncode == 2
         # Strip ANSI codes from stderr before asserting
-        clean_stderr = strip_ansi(result.stderr)
-        # Normalize whitespace for assertion (Rich may wrap text)
-        normalized_stderr = re.sub(r"\s+", " ", clean_stderr)
-        assert "does not exist" in normalized_stderr
+        cleaned = strip_ansi(result.stderr)
+        # Use regex to handle whitespace variations from Rich wrapping
+        assert re.search(r"does\s+not\s+exist", cleaned, re.IGNORECASE)
         assert (
-            "Invalid value for '--input'" in clean_stderr
-            or "Invalid value for '-i'" in clean_stderr
+            "Invalid value for '--input'" in cleaned
+            or "Invalid value for '-i'" in cleaned
         )
 
     def test_map_without_folium_exit_code(self):
@@ -190,10 +189,9 @@ class TestErrorMessages:
         # Typer validates file existence before our code runs
         assert result.returncode == 2
         # Strip ANSI codes from stderr before asserting
-        clean_stderr = strip_ansi(result.stderr)
-        # Normalize whitespace for assertion (Rich may wrap text)
-        normalized_stderr = re.sub(r"\s+", " ", clean_stderr)
-        assert "does not exist" in normalized_stderr
+        cleaned = strip_ansi(result.stderr)
+        # Use regex to handle whitespace variations from Rich wrapping
+        assert re.search(r"does\s+not\s+exist", cleaned, re.IGNORECASE)
 
     def test_empty_dataset_error_message(self, tmp_path):
         """Test that empty dataset produces clear error."""
