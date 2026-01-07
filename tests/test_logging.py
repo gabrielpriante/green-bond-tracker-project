@@ -131,7 +131,7 @@ class TestExitCodes:
 
     def test_file_not_found_exit_code(self):
         """Test that file not found exits with code 2 (typer validation).
-        
+
         Note: Typer validates file existence before our code runs, so it
         exits with code 2 (typer's validation error). If the file passes
         typer's check but is not found by our code (e.g., race condition),
