@@ -3,6 +3,7 @@ Tests for logging configuration and functionality.
 """
 
 import logging
+import re
 import subprocess
 import sys
 
@@ -148,7 +149,9 @@ class TestExitCodes:
         assert result.returncode == 2
         # Strip ANSI codes from stderr before asserting
         clean_stderr = strip_ansi(result.stderr)
-        assert "does not exist" in clean_stderr
+        # Normalize whitespace for assertion (Rich may wrap text)
+        normalized_stderr = re.sub(r"\s+", " ", clean_stderr)
+        assert "does not exist" in normalized_stderr
         assert (
             "Invalid value for '--input'" in clean_stderr
             or "Invalid value for '-i'" in clean_stderr
@@ -188,7 +191,9 @@ class TestErrorMessages:
         assert result.returncode == 2
         # Strip ANSI codes from stderr before asserting
         clean_stderr = strip_ansi(result.stderr)
-        assert "does not exist" in clean_stderr
+        # Normalize whitespace for assertion (Rich may wrap text)
+        normalized_stderr = re.sub(r"\s+", " ", clean_stderr)
+        assert "does not exist" in normalized_stderr
 
     def test_empty_dataset_error_message(self, tmp_path):
         """Test that empty dataset produces clear error."""

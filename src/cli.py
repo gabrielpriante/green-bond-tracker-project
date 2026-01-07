@@ -29,6 +29,41 @@ _verbose: bool = False
 _quiet: bool = False
 
 
+def validate_input_path(value: Path | None) -> Path | None:
+    """
+    Validate that an input file path exists.
+
+    This callback ensures consistent error messages across Python/Typer versions
+    by explicitly checking file existence and raising a BadParameter exception
+    with a standard message containing "does not exist".
+
+    Parameters
+    ----------
+    value : Path or None
+        The input path to validate
+
+    Returns
+    -------
+    Path or None
+        The validated path if it exists, or None if not provided
+
+    Raises
+    ------
+    typer.BadParameter
+        If the path is provided but does not exist or is not a file
+    """
+    if value is None:
+        return None
+
+    path = Path(value)
+    if not path.exists():
+        raise typer.BadParameter(f"File '{value}' does not exist")
+    if not path.is_file():
+        raise typer.BadParameter(f"Path '{value}' does not exist as a file")
+
+    return value
+
+
 def version_callback(value: bool):
     """Print version and exit."""
     if value:
@@ -104,7 +139,7 @@ def validate(
         "--input",
         "-i",
         help="Path to the green bonds CSV file (overrides config)",
-        exists=True,
+        callback=validate_input_path,
         dir_okay=False,
         readable=True,
     ),
