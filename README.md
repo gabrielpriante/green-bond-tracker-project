@@ -74,6 +74,147 @@ gbt validate --help
 - `gbt map`: Interactive HTML choropleth map saved to specified file
 - `gbt viz`: Static PNG visualizations saved to specified directory
 
+## Logging and Error Handling
+
+The Green Bond Tracker includes structured logging to help you understand what the tool is doing and diagnose issues when they occur.
+
+### Logging Levels
+
+By default, the tool runs in **INFO** mode, which shows informative progress messages:
+
+```bash
+# Normal operation with INFO logging
+gbt validate --input data/green_bonds.csv
+```
+
+Output:
+```
+Validating: data/green_bonds.csv
+17:34:06 [INFO] Starting validation of data/green_bonds.csv
+17:34:06 [INFO] Loading bond data...
+✓ Loaded 20 records
+17:34:06 [INFO] Loaded 20 records from data/green_bonds.csv
+17:34:06 [INFO] Running validation checks...
+✓ Validation PASSED
+```
+
+### Global CLI Flags
+
+Use these flags with any command to control logging behavior:
+
+**`--verbose`** - Enable DEBUG logging for detailed execution steps:
+```bash
+# See detailed debug information
+gbt --verbose validate --input data/green_bonds.csv
+```
+
+Output includes detailed steps:
+```
+2026-01-07 17:34:14 [DEBUG] green_bond_tracker: Logging initialized in DEBUG mode
+2026-01-07 17:34:14 [DEBUG] green_bond_tracker: Loading green bonds from data/green_bonds.csv
+2026-01-07 17:34:14 [DEBUG] green_bond_tracker: Successfully loaded 20 bonds from data/green_bonds.csv
+...
+```
+
+**`--quiet`** - Suppress INFO logs (show WARN/ERROR only):
+```bash
+# Minimal output - only warnings and errors
+gbt --quiet validate --input data/green_bonds.csv
+```
+
+Output shows only errors and warnings:
+```
+Validating: data/green_bonds.csv
+✓ Loaded 20 records
+✓ Validation PASSED
+```
+
+### When to Use Each Mode
+
+- **Normal (INFO)**: Default for most users. Shows what the tool is doing without overwhelming detail.
+- **Verbose (DEBUG)**: Use when debugging issues or wanting to understand internal operations. Includes full stack traces for errors.
+- **Quiet (WARNING)**: Use in automated scripts or when you only want to see problems.
+
+### Error Messages
+
+The tool provides clear, actionable error messages:
+
+#### File Not Found
+```bash
+gbt validate --input missing.csv
+```
+```
+File Not Found: Green bonds data file not found: missing.csv
+→ Check that the input file path is correct
+```
+
+#### Invalid Data Format
+```bash
+gbt validate --input bad_format.csv
+```
+```
+Invalid Data: Missing required columns: bond_id, amount_usd_millions
+→ Verify the CSV has required columns (bond_id, issuer, country_code, amount_usd_millions)
+```
+
+#### Empty Dataset
+```bash
+gbt summary --input empty.csv
+```
+```
+⚠ Warning: Dataset is empty
+→ Check that the input file contains valid bond data
+```
+
+#### Feature Not Available
+```bash
+gbt map --input data.csv  # without folium installed
+```
+```
+Feature Not Available: Interactive maps require folium.
+Install with: pip install 'green-bond-tracker[interactive]'
+```
+
+### Exit Codes
+
+Commands exit with standard codes for easy scripting:
+
+| Code | Meaning | Example |
+|------|---------|---------|
+| `0` | Success | Validation passed, data processed successfully |
+| `1` | User/Input Error | File not found, invalid data, missing columns |
+| `2` | Feature Not Implemented | Map command without folium installed |
+| `3` | Unexpected Internal Error | Programming error, unexpected exception |
+
+Example usage in a script:
+```bash
+#!/bin/bash
+gbt validate --input data/green_bonds.csv
+if [ $? -eq 0 ]; then
+    echo "Validation passed, continuing..."
+    gbt summary --input data/green_bonds.csv
+else
+    echo "Validation failed, stopping pipeline"
+    exit 1
+fi
+```
+
+### Troubleshooting Tips
+
+1. **Run with `--verbose` first**: When encountering an error, rerun with `--verbose` to see detailed information.
+   ```bash
+   gbt --verbose validate --input data.csv
+   ```
+
+2. **Check error suggestions**: Error messages include `→` arrows with actionable suggestions.
+
+3. **Validate exit codes**: In scripts, check exit codes to handle different failure modes appropriately.
+
+4. **Review log output**: All logs go to stdout, so you can redirect them to a file:
+   ```bash
+   gbt validate --input data.csv > validation.log 2>&1
+   ```
+
 ## Configuration
 
 The Green Bond Tracker uses a centralized YAML configuration system that allows you to adapt the tool to new datasets, paths, and environments without editing source code.
@@ -490,6 +631,18 @@ pre-commit run --all-files                       # Run pre-commit hooks
 
 ## CLI Reference
 
+### Global Flags
+
+These flags work with any command:
+
+```bash
+--verbose    Enable DEBUG logging (detailed execution steps)
+--quiet      Suppress INFO logs (show WARN/ERROR only)
+--config     Path to custom configuration YAML file
+--version    Show version and exit
+--help       Show help message
+```
+
 ### Commands
 
 ```bash
@@ -497,16 +650,16 @@ pre-commit run --all-files                       # Run pre-commit hooks
 gbt --version
 
 # Validate data
-gbt validate --input <path> [--output report.csv] [--verbose]
+gbt [--verbose|--quiet] validate --input <path> [--output report.csv] [--verbose]
 
 # Show statistics
-gbt summary [--input <path>] [--output-dir <dir>] [--json]
+gbt [--verbose|--quiet] summary [--input <path>] [--output-dir <dir>] [--json]
 
 # Generate interactive map
-gbt map --input <path> --output <file.html>
+gbt [--verbose|--quiet] map --input <path> --output <file.html>
 
 # Generate visualizations
-gbt viz [--input <path>] [--output-dir <dir>] [--interactive]
+gbt [--verbose|--quiet] viz [--input <path>] [--output-dir <dir>] [--interactive]
 
 # Show version (alternative)
 gbt version
@@ -518,17 +671,23 @@ gbt version
 # Show version
 gbt --version
 
+# Validate with detailed debug logging
+gbt --verbose validate --input data/green_bonds.csv
+
+# Validate in quiet mode (errors/warnings only)
+gbt --quiet validate --input data/green_bonds.csv
+
 # Validate with detailed report
 gbt validate --input data/green_bonds.csv --output validation_report.csv -v
 
-# Get summary as JSON
-gbt summary --input data/green_bonds.csv --json
+# Get summary as JSON with debug logging
+gbt --verbose summary --input data/green_bonds.csv --json
 
 # Generate interactive map
 gbt map --input data/green_bonds.csv --output outputs/map.html
 
-# Generate all static visualizations
-gbt viz --input data/green_bonds.csv --output-dir outputs/
+# Generate all static visualizations with verbose logging
+gbt --verbose viz --input data/green_bonds.csv --output-dir outputs/
 ```
 
 ### Legacy Commands (still supported)
