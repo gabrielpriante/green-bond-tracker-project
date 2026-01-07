@@ -4,17 +4,12 @@ Tests for CLI commands - smoke tests to ensure basic functionality.
 These tests verify that the CLI commands can be invoked without crashing.
 """
 
-import re
 import subprocess
 import sys
 
+from conftest import strip_ansi
+
 import src
-
-
-def strip_ansi(text):
-    """Remove ANSI escape codes from text."""
-    ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
-    return ansi_escape.sub("", text)
 
 
 class TestCLISmokeTests:

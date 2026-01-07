@@ -6,6 +6,8 @@ import logging
 import subprocess
 import sys
 
+from conftest import strip_ansi
+
 from src.logging_config import (
     format_validation_error,
     get_logger,
@@ -144,7 +146,13 @@ class TestExitCodes:
         )
         # Typer validates file existence before our code runs
         assert result.returncode == 2
-        assert "does not exist" in result.stderr
+        # Strip ANSI codes from stderr before asserting
+        clean_stderr = strip_ansi(result.stderr)
+        assert "does not exist" in clean_stderr
+        assert (
+            "Invalid value for '--input'" in clean_stderr
+            or "Invalid value for '-i'" in clean_stderr
+        )
 
     def test_map_without_folium_exit_code(self):
         """Test that map command without folium exits with 2."""
@@ -178,7 +186,9 @@ class TestErrorMessages:
         )
         # Typer validates file existence before our code runs
         assert result.returncode == 2
-        assert "does not exist" in result.stderr
+        # Strip ANSI codes from stderr before asserting
+        clean_stderr = strip_ansi(result.stderr)
+        assert "does not exist" in clean_stderr
 
     def test_empty_dataset_error_message(self, tmp_path):
         """Test that empty dataset produces clear error."""
