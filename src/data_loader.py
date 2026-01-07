@@ -13,6 +13,10 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 
+from .logging_config import get_logger
+
+logger = get_logger()
+
 
 def load_green_bonds(filepath: str | None = None) -> pd.DataFrame:
     """
@@ -40,16 +44,31 @@ def load_green_bonds(filepath: str | None = None) -> pd.DataFrame:
         base_path = Path(__file__).parent.parent
         filepath = base_path / "data" / "green_bonds.csv"
 
+    logger.debug(f"Loading green bonds from {filepath}")
+
     try:
         df = pd.read_csv(filepath, comment="#")
     except FileNotFoundError:
+        logger.error(f"Green bonds data file not found: {filepath}")
         raise FileNotFoundError(f"Green bonds data file not found: {filepath}")
+    except pd.errors.EmptyDataError:
+        logger.error(f"Green bonds data file is empty: {filepath}")
+        raise ValueError(f"Green bonds data file is empty: {filepath}")
+    except Exception as e:
+        logger.error(f"Failed to read CSV file {filepath}: {e}")
+        raise ValueError(f"Failed to read CSV file {filepath}: {e}")
 
     # Validate required columns
     required_cols = ["bond_id", "issuer", "country_code", "amount_usd_millions"]
     missing_cols = set(required_cols) - set(df.columns)
     if missing_cols:
-        raise ValueError(f"Missing required columns: {missing_cols}")
+        logger.error(f"Missing required columns: {missing_cols}")
+        raise ValueError(
+            f"Missing required columns: {', '.join(sorted(missing_cols))}. "
+            f"Expected columns: {', '.join(required_cols)}"
+        )
+
+    logger.debug(f"Successfully loaded {len(df)} bonds from {filepath}")
 
     # Convert date columns to datetime
     date_columns = ["issue_date", "maturity_date"]
@@ -84,14 +103,23 @@ def load_country_geometries(filepath: str | None = None) -> gpd.GeoDataFrame:
         base_path = Path(__file__).parent.parent
         filepath = base_path / "data" / "countries_geo.json"
 
+    logger.debug(f"Loading country geometries from {filepath}")
+
     try:
         gdf = gpd.read_file(filepath)
     except FileNotFoundError:
+        logger.error(f"Country geometries file not found: {filepath}")
         raise FileNotFoundError(f"Country geometries file not found: {filepath}")
+    except Exception as e:
+        logger.error(f"Failed to read GeoJSON file {filepath}: {e}")
+        raise ValueError(f"Failed to read GeoJSON file {filepath}: {e}")
 
     # Ensure ISO code column exists
     if "iso_a3" not in gdf.columns:
+        logger.warning("GeoJSON missing 'iso_a3' column for ISO country codes")
         warnings.warn("GeoJSON missing 'iso_a3' column for ISO country codes", stacklevel=2)
+
+    logger.debug(f"Successfully loaded {len(gdf)} country geometries from {filepath}")
 
     return gdf
 
