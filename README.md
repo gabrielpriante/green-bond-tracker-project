@@ -1,8 +1,8 @@
 # Green Bond Project Tracker
 
-> **⚠️ IMPORTANT DISCLAIMER**  
-> **This is an educational project for learning purposes only.**  
-> **NOT intended for investment advice or financial decision-making.**  
+> **⚠️ IMPORTANT DISCLAIMER**
+> **This is an educational project for learning purposes only.**
+> **NOT intended for investment advice or financial decision-making.**
 > **Always consult qualified financial advisors before making investment decisions.**
 
 A lightweight, open-source tracker for green bonds and sustainability-linked projects with GIS (Geographic Information System) support. Designed for learning, transparency, and portfolio-level insights.
@@ -121,7 +121,7 @@ schema:
     - issuer
     - country_code
     - amount_usd_millions
-  
+
   optional_columns:
     - issue_date
     - maturity_date
@@ -487,6 +487,50 @@ ruff check src/ tests/                           # Lint
 ruff format src/ tests/                          # Format
 pre-commit run --all-files                       # Run pre-commit hooks
 ```
+
+## Development
+
+### Quick Dev Loop
+
+Get started contributing in minutes:
+
+```bash
+# 1. Install development dependencies
+pip install -e ".[dev]"
+
+# This installs the package in editable mode with:
+# - pytest and pytest-cov (testing)
+# - ruff (linting and formatting)
+# - pre-commit (git hooks)
+
+# 2. Install pre-commit hooks (optional but recommended)
+pre-commit install
+
+# 3. Make your changes, then run quality checks
+make lint          # Check code style
+make format        # Auto-format code
+make test          # Run tests with coverage
+
+# 4. Try your changes with the CLI
+gbt --version
+gbt validate --input data/green_bonds.csv
+gbt summary --input data/green_bonds.csv
+
+# 5. Before committing, ensure everything passes
+make lint && make test
+```
+
+**Alternative: Use the Makefile**
+
+```bash
+# Install everything (includes dev dependencies)
+make install
+
+# Run all checks at once
+make lint && make format && make test
+```
+
+**Pre-commit hooks** automatically run linting and formatting checks before each commit. This catches issues early and keeps the codebase consistent.
 
 ## CLI Reference
 

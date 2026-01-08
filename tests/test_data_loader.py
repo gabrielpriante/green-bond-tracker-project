@@ -2,15 +2,9 @@
 Unit tests for the Green Bond Tracker data loader module.
 """
 
-import sys
-from pathlib import Path
-
 import geopandas as gpd
 import pandas as pd
 import pytest
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.data_loader import (
     get_summary_statistics,
