@@ -70,9 +70,14 @@ venv\Scripts\activate
 ### 3. Install Dependencies
 
 ```bash
-# Install project with all development dependencies
-pip install -r requirements.txt
-pip install -e ".[dev,interactive,notebook]"
+# Install project with development dependencies
+pip install -e ".[dev]"
+
+# OR install with all optional features (interactive maps, notebooks, dev tools)
+pip install -e ".[all]"
+
+# OR use the Makefile
+make install
 
 # Install pre-commit hooks
 pre-commit install
@@ -82,13 +87,14 @@ pre-commit install
 
 ```bash
 # Run tests to ensure everything is working
-pytest tests/
+make test
 
 # Run linter
-ruff check src/ tests/
+make lint
 
 # Try the CLI
-python -m src.cli version
+gbt --version
+gbt validate --input data/green_bonds.csv
 ```
 
 ### 5. Run Checks Locally (Before Pushing)
@@ -96,21 +102,15 @@ python -m src.cli version
 Run these commands to ensure your changes will pass CI:
 
 ```bash
-# Lint and format check
+# Using Makefile (recommended)
+make lint        # Check code style
+make format      # Auto-format code
+make test        # Run tests with coverage
+
+# Or manually
 ruff check src/ tests/
-ruff format --check src/ tests/
-
-# Run tests with coverage (as CI does)
-pytest tests/ -v --cov=src --cov-report=xml --cov-report=term
-```
-
-**Quick fix commands** if checks fail:
-```bash
-# Auto-fix linting issues
-ruff check --fix src/ tests/
-
-# Auto-format code
 ruff format src/ tests/
+pytest tests/ -v --cov=src --cov-report=term-missing
 ```
 
 ## 🔧 How to Contribute
