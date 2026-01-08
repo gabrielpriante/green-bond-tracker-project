@@ -97,7 +97,7 @@ If publishing a feature service, specify:
 
 **Title**: `___________________________` (e.g., `"Educational Green Bond Dataset"`)
 
-**Summary**: 
+**Summary**:
 ```
 ___________________________________________________________________
 ___________________________________________________________________
@@ -110,7 +110,7 @@ ___________________________________________________________________
 ___________________________________________________________________
 ```
 
-**Tags** (comma-separated): 
+**Tags** (comma-separated):
 ```
 ___________________________________________________________________
 ```
@@ -134,7 +134,7 @@ ___________________________________________________________________
 
 ### 9. Geometry/Symbology Preferences
 
-**Geometry type**: 
+**Geometry type**:
 - [ ] Polygon (country boundaries - recommended)
 - [ ] Point (country centroids)
 - [ ] Both
@@ -305,6 +305,6 @@ This integration is for **educational purposes only**. Please ensure:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2024-12-30  
+**Document Version**: 1.0
+**Last Updated**: 2024-12-30
 **Status**: Awaiting user input for implementation

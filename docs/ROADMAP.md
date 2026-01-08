@@ -396,5 +396,5 @@ This roadmap is a living document and subject to change based on:
 
 ---
 
-**Last Updated**: 2024-12-30  
+**Last Updated**: 2024-12-30
 **Next Review**: 2025-01-30

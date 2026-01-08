@@ -1,7 +1,7 @@
 # Portfolio Metrics Documentation
 
-> **⚠️ EDUCATIONAL USE ONLY**  
-> This document explains portfolio analytics metrics for learning purposes.  
+> **⚠️ EDUCATIONAL USE ONLY**
+> This document explains portfolio analytics metrics for learning purposes.
 > **NOT intended for investment advice or financial decision-making.**
 
 ## Overview
@@ -16,7 +16,7 @@ All metrics are designed to be **transparent, interpretable, and educational** r
 
 **Function:** `issuance_overview(df)`
 
-**What it does:**  
+**What it does:**
 Provides high-level summary statistics about the bond portfolio.
 
 **Returns:**
@@ -28,7 +28,7 @@ Provides high-level summary statistics about the bond portfolio.
 - `pct_missing_year`: Percentage of records with missing issue dates
 - `pct_missing_amount`: Percentage of records with missing amounts
 
-**Plain English:**  
+**Plain English:**
 This tells you the basic size and scope of your dataset: how many bonds, how much money, what time period, and how many different issuers are represented.
 
 **Limitations:**
@@ -40,7 +40,7 @@ This tells you the basic size and scope of your dataset: how many bonds, how muc
 
 **Function:** `aggregation_by_country(df)`
 
-**What it does:**  
+**What it does:**
 Groups bonds by country and calculates totals and shares.
 
 **Returns DataFrame with:**
@@ -49,7 +49,7 @@ Groups bonds by country and calculates totals and shares.
 - `total_issuance_usd_millions`: Sum of bond amounts
 - `share_of_total_pct`: This country's percentage of global total
 
-**Plain English:**  
+**Plain English:**
 Shows which countries are issuing the most green bonds in your dataset, both by count and by dollar amount.
 
 **Limitations:**
@@ -62,7 +62,7 @@ Shows which countries are issuing the most green bonds in your dataset, both by 
 
 **Function:** `aggregation_by_year(df)`
 
-**What it does:**  
+**What it does:**
 Groups bonds by issue year and shows year-over-year growth.
 
 **Returns DataFrame with:**
@@ -71,7 +71,7 @@ Groups bonds by issue year and shows year-over-year growth.
 - `issuance_amount_usd_millions`: Total issuance that year
 - `yoy_growth_pct`: Year-over-year growth rate (%)
 
-**Plain English:**  
+**Plain English:**
 Shows how the green bond market has grown (or shrunk) over time in your dataset.
 
 **Limitations:**
@@ -84,7 +84,7 @@ Shows how the green bond market has grown (or shrunk) over time in your dataset.
 
 **Function:** `aggregation_by_category(df, column_name)`
 
-**What it does:**  
+**What it does:**
 Generic aggregation for any categorical column (e.g., project type, certification, currency).
 
 **Returns DataFrame with:**
@@ -93,7 +93,7 @@ Generic aggregation for any categorical column (e.g., project type, certificatio
 - `total_issuance_usd_millions`: Total amount
 - `share_of_total_pct`: Percentage of total
 
-**Plain English:**  
+**Plain English:**
 Flexible tool to break down your portfolio by any dimension: what types of projects are funded, which certification standards are used, etc.
 
 **Limitations:**
@@ -107,7 +107,7 @@ Flexible tool to break down your portfolio by any dimension: what types of proje
 
 **Function:** `top_n_concentration(df, column_name='country_code', n=5)`
 
-**What it does:**  
+**What it does:**
 Calculates what percentage of total issuance comes from the top N entities in a category.
 
 **Returns dict with:**
@@ -115,7 +115,7 @@ Calculates what percentage of total issuance comes from the top N entities in a 
 - `top_n_entries`: List of the top N entity names
 - `top_n_share_pct`: Their combined share of total (%)
 
-**Plain English:**  
+**Plain English:**
 Answers questions like "Do the top 5 countries account for 80% of all issuance?" High concentration may indicate market dominance or reporting bias.
 
 **Limitations:**
@@ -127,10 +127,10 @@ Answers questions like "Do the top 5 countries account for 80% of all issuance?"
 
 **Function:** `concentration_index(df, column_name='country_code')`
 
-**What it does:**  
+**What it does:**
 Calculates the Herfindahl-Hirschman Index, a standard measure of market concentration.
 
-**Returns:**  
+**Returns:**
 Single float value (0-10,000)
 
 **Interpretation:**
@@ -138,10 +138,10 @@ Single float value (0-10,000)
 - **1,500-2,500**: Moderate concentration
 - **2,500+**: High concentration (dominated by few entities)
 
-**Formula:**  
+**Formula:**
 HHI = sum of squared market shares (as percentages)
 
-**Plain English:**  
+**Plain English:**
 A single number that tells you how concentrated or diversified your portfolio is. Lower = more diversified, higher = more concentrated.
 
 **Limitations:**
@@ -156,7 +156,7 @@ A single number that tells you how concentrated or diversified your portfolio is
 
 **Function:** `data_coverage_report(df)`
 
-**What it does:**  
+**What it does:**
 Analyzes each column to show how complete the data is.
 
 **Returns DataFrame with:**
@@ -165,7 +165,7 @@ Analyzes each column to show how complete the data is.
 - `pct_non_null`: Percentage of non-null values
 - `coverage_note`: Warning if below 80% threshold
 
-**Plain English:**  
+**Plain English:**
 Shows which fields have good data and which have lots of missing values. Helps identify data quality issues and reporting gaps.
 
 **Limitations:**
@@ -180,7 +180,7 @@ Shows which fields have good data and which have lots of missing values. Helps i
 
 **Function:** `portfolio_summary_table(df)`
 
-**What it does:**  
+**What it does:**
 Combines headline metrics, concentration measures, and top categories into a single export-ready table.
 
 **Includes:**
@@ -191,7 +191,7 @@ Combines headline metrics, concentration measures, and top categories into a sin
 - Country concentration (HHI)
 - Top country, year, and project type
 
-**Plain English:**  
+**Plain English:**
 A "dashboard" table that gives you the essential portfolio facts at a glance. Designed to be saved as CSV for reports.
 
 **Limitations:**
@@ -259,19 +259,19 @@ Let's say you run analytics on a dataset and get:
 
 ## Usage Recommendations
 
-1. **Always check data coverage first**  
+1. **Always check data coverage first**
    Run `data_coverage_report()` before other metrics to understand data quality.
 
-2. **Interpret concentration in context**  
+2. **Interpret concentration in context**
    High concentration may reflect market reality OR reporting bias.
 
-3. **Document assumptions**  
+3. **Document assumptions**
    Note currency, date range, source, and any data cleaning done.
 
-4. **Combine multiple views**  
+4. **Combine multiple views**
    Look at country, year, AND project type to get full picture.
 
-5. **State limitations**  
+5. **State limitations**
    When sharing results, always note data gaps and interpretation limits.
 
 ## CLI Usage

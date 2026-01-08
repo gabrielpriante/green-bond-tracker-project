@@ -1,8 +1,8 @@
 # Green Bond Project Tracker
 
-> **⚠️ IMPORTANT DISCLAIMER**  
-> **This is an educational project for learning purposes only.**  
-> **NOT intended for investment advice or financial decision-making.**  
+> **⚠️ IMPORTANT DISCLAIMER**
+> **This is an educational project for learning purposes only.**
+> **NOT intended for investment advice or financial decision-making.**
 > **Always consult qualified financial advisors before making investment decisions.**
 
 A lightweight, open-source tracker for green bonds and sustainability-linked projects with GIS (Geographic Information System) support. Designed for learning, transparency, and portfolio-level insights.
@@ -121,7 +121,7 @@ schema:
     - issuer
     - country_code
     - amount_usd_millions
-  
+
   optional_columns:
     - issue_date
     - maturity_date

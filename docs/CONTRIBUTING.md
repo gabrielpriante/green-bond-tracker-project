@@ -249,10 +249,10 @@ def test_validate_country_code_rejects_two_letter_codes():
     """Test that validation rejects 2-letter ISO codes."""
     # Arrange
     invalid_code = "US"
-    
+
     # Act
     result = validate_country_code(invalid_code)
-    
+
     # Assert
     assert result is False
 ```
