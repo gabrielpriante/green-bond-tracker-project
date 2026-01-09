@@ -16,7 +16,9 @@ import pandas as pd
 from src.config import Config, get_config
 
 
-def load_green_bonds(filepath: str | Path | None = None, config: Config | None = None) -> pd.DataFrame:
+def load_green_bonds(
+    filepath: str | Path | None = None, config: Config | None = None
+) -> pd.DataFrame:
     """
     Load green bond data from CSV file.
 
@@ -79,7 +81,9 @@ def load_green_bonds(filepath: str | Path | None = None, config: Config | None =
     return df
 
 
-def load_country_geometries(filepath: str | Path | None = None, config: Config | None = None) -> gpd.GeoDataFrame:
+def load_country_geometries(
+    filepath: str | Path | None = None, config: Config | None = None
+) -> gpd.GeoDataFrame:
     """
     Load country geometry data from GeoJSON file.
 
@@ -129,7 +133,11 @@ def load_country_geometries(filepath: str | Path | None = None, config: Config |
         # Check if it's a file-not-found scenario and convert to FileNotFoundError
         error_type = type(e).__name__
         error_msg = str(e)
-        if error_type == "DataSourceError" or "No such file" in error_msg or "does not exist" in error_msg:
+        if (
+            error_type == "DataSourceError"
+            or "No such file" in error_msg
+            or "does not exist" in error_msg
+        ):
             raise FileNotFoundError(
                 f"Country geometries file not found at '{filepath}'. "
                 f"Please ensure the file exists or update the path in config.yaml."
