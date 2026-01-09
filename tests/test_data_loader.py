@@ -2,10 +2,13 @@
 Unit tests for the Green Bond Tracker data loader module.
 """
 
+from pathlib import Path
+
 import geopandas as gpd
 import pandas as pd
 import pytest
 
+from src.config import Config
 from src.data_loader import (
     get_summary_statistics,
     join_bonds_with_geo,
@@ -246,6 +249,92 @@ class TestGetSummaryStatistics:
         assert "top_5_countries" in stats
         assert isinstance(stats["top_5_countries"], dict)
         assert len(stats["top_5_countries"]) <= 5
+
+
+class TestConfigDrivenLoading:
+    """Tests for config-driven data loading functionality."""
+
+    def test_explicit_path_green_bonds(self):
+        """Test that explicit file path works for load_green_bonds."""
+        # Use the actual data file with explicit path
+        repo_root = Path(__file__).parent.parent
+        filepath = repo_root / "data" / "green_bonds.csv"
+
+        df = load_green_bonds(filepath=str(filepath))
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) > 0
+        assert "bond_id" in df.columns
+
+    def test_explicit_path_country_geometries(self):
+        """Test that explicit file path works for load_country_geometries."""
+        # Use the actual data file with explicit path
+        repo_root = Path(__file__).parent.parent
+        filepath = repo_root / "data" / "countries_geo.json"
+
+        gdf = load_country_geometries(filepath=str(filepath))
+        assert isinstance(gdf, gpd.GeoDataFrame)
+        assert len(gdf) > 0
+        assert "iso_a3" in gdf.columns
+
+    def test_missing_file_raises_clear_error_green_bonds(self):
+        """Test that missing file raises FileNotFoundError with clear message."""
+        nonexistent_path = "/nonexistent/path/to/file.csv"
+
+        with pytest.raises(FileNotFoundError) as exc_info:
+            load_green_bonds(filepath=nonexistent_path)
+
+        error_msg = str(exc_info.value)
+        assert "Green bonds data file not found" in error_msg
+        assert nonexistent_path in error_msg or "nonexistent" in error_msg
+        assert "config.yaml" in error_msg
+
+    def test_missing_file_raises_clear_error_country_geometries(self):
+        """Test that missing file raises FileNotFoundError with clear message."""
+        nonexistent_path = "/nonexistent/path/to/file.json"
+
+        with pytest.raises(FileNotFoundError) as exc_info:
+            load_country_geometries(filepath=nonexistent_path)
+
+        error_msg = str(exc_info.value)
+        assert "Country geometries file not found" in error_msg
+        assert nonexistent_path in error_msg or "nonexistent" in error_msg
+        assert "config.yaml" in error_msg
+
+    def test_config_default_path_green_bonds(self):
+        """Test that config default path works when file exists."""
+        # Create a custom config with the default path
+        config_dict = {"paths": {"raw_data": "data/green_bonds.csv"}}
+        config = Config(config_dict)
+
+        df = load_green_bonds(config=config)
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) > 0
+        assert "bond_id" in df.columns
+
+    def test_config_default_path_country_geometries(self):
+        """Test that config default path works when file exists."""
+        # Create a custom config with the default path
+        config_dict = {"paths": {"geo_data": "data/countries_geo.json"}}
+        config = Config(config_dict)
+
+        gdf = load_country_geometries(config=config)
+        assert isinstance(gdf, gpd.GeoDataFrame)
+        assert len(gdf) > 0
+        assert "iso_a3" in gdf.columns
+
+    def test_relative_path_resolution_green_bonds(self):
+        """Test that relative paths are resolved correctly relative to repo root."""
+        # Use relative path (should be resolved relative to repo root)
+        df = load_green_bonds(filepath="data/green_bonds.csv")
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) > 0
+
+    def test_relative_path_resolution_country_geometries(self):
+        """Test that relative paths are resolved correctly relative to repo root."""
+        # Use relative path (should be resolved relative to repo root)
+        gdf = load_country_geometries(filepath="data/countries_geo.json")
+        assert isinstance(gdf, gpd.GeoDataFrame)
+        assert len(gdf) > 0
 
 
 if __name__ == "__main__":

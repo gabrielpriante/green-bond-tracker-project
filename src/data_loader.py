@@ -13,15 +13,20 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 
+from src.config import Config, get_config
 
-def load_green_bonds(filepath: str | None = None) -> pd.DataFrame:
+
+def load_green_bonds(filepath: str | Path | None = None, config: Config | None = None) -> pd.DataFrame:
     """
     Load green bond data from CSV file.
 
     Parameters:
     -----------
-    filepath : str, optional
-        Path to the green bonds CSV file. If None, uses default data path.
+    filepath : str or Path, optional
+        Path to the green bonds CSV file. Can be absolute or relative to repository root.
+        If None, uses path from config (or default if config not provided).
+    config : Config, optional
+        Configuration object. If None and filepath is None, uses global config.
 
     Returns:
     --------
@@ -31,19 +36,33 @@ def load_green_bonds(filepath: str | None = None) -> pd.DataFrame:
     Raises:
     -------
     FileNotFoundError
-        If the CSV file is not found
+        If the CSV file is not found at the specified or configured path.
+        Error message includes the full path that was attempted.
     ValueError
-        If required columns are missing
+        If required columns are missing from the loaded data.
     """
-    if filepath is None:
-        # Use default path relative to this module
-        base_path = Path(__file__).parent.parent
-        filepath = base_path / "data" / "green_bonds.csv"
+    # Determine repository root (parent of src directory)
+    repo_root = Path(__file__).parent.parent
 
+    if filepath is None:
+        # Get config and use its raw_data_path
+        if config is None:
+            config = get_config()
+        filepath = config.raw_data_path
+
+    # Convert to Path and resolve relative to repo root
+    filepath = Path(filepath)
+    if not filepath.is_absolute():
+        filepath = repo_root / filepath
+
+    # Load the CSV file
     try:
         df = pd.read_csv(filepath, comment="#")
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Green bonds data file not found: {filepath}")
+    except FileNotFoundError as e:
+        raise FileNotFoundError(
+            f"Green bonds data file not found at '{filepath}'. "
+            f"Please ensure the file exists or update the path in config.yaml."
+        ) from e
 
     # Validate required columns
     required_cols = ["bond_id", "issuer", "country_code", "amount_usd_millions"]
@@ -60,14 +79,17 @@ def load_green_bonds(filepath: str | None = None) -> pd.DataFrame:
     return df
 
 
-def load_country_geometries(filepath: str | None = None) -> gpd.GeoDataFrame:
+def load_country_geometries(filepath: str | Path | None = None, config: Config | None = None) -> gpd.GeoDataFrame:
     """
     Load country geometry data from GeoJSON file.
 
     Parameters:
     -----------
-    filepath : str, optional
-        Path to the countries GeoJSON file. If None, uses default data path.
+    filepath : str or Path, optional
+        Path to the countries GeoJSON file. Can be absolute or relative to repository root.
+        If None, uses path from config (or default if config not provided).
+    config : Config, optional
+        Configuration object. If None and filepath is None, uses global config.
 
     Returns:
     --------
@@ -77,17 +99,41 @@ def load_country_geometries(filepath: str | None = None) -> gpd.GeoDataFrame:
     Raises:
     -------
     FileNotFoundError
-        If the GeoJSON file is not found
+        If the GeoJSON file is not found at the specified or configured path.
+        Error message includes the full path that was attempted.
     """
-    if filepath is None:
-        # Use default path relative to this module
-        base_path = Path(__file__).parent.parent
-        filepath = base_path / "data" / "countries_geo.json"
+    # Determine repository root (parent of src directory)
+    repo_root = Path(__file__).parent.parent
 
+    if filepath is None:
+        # Get config and use its geo_data_path
+        if config is None:
+            config = get_config()
+        filepath = config.geo_data_path
+
+    # Convert to Path and resolve relative to repo root
+    filepath = Path(filepath)
+    if not filepath.is_absolute():
+        filepath = repo_root / filepath
+
+    # Load the GeoJSON file
     try:
         gdf = gpd.read_file(filepath)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Country geometries file not found: {filepath}")
+    except FileNotFoundError as e:
+        raise FileNotFoundError(
+            f"Country geometries file not found at '{filepath}'. "
+            f"Please ensure the file exists or update the path in config.yaml."
+        ) from e
+    except Exception as e:
+        # GeoPandas can raise various exceptions for missing files (e.g., pyogrio.errors.DataSourceError)
+        # Convert them to FileNotFoundError if they indicate a missing file
+        if "No such file" in str(e) or "does not exist" in str(e):
+            raise FileNotFoundError(
+                f"Country geometries file not found at '{filepath}'. "
+                f"Please ensure the file exists or update the path in config.yaml."
+            ) from e
+        # Re-raise other exceptions
+        raise
 
     # Ensure ISO code column exists
     if "iso_a3" not in gdf.columns:
