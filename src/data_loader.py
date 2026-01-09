@@ -125,14 +125,16 @@ def load_country_geometries(filepath: str | Path | None = None, config: Config |
             f"Please ensure the file exists or update the path in config.yaml."
         ) from e
     except Exception as e:
-        # GeoPandas can raise various exceptions for missing files (e.g., pyogrio.errors.DataSourceError)
-        # Convert them to FileNotFoundError if they indicate a missing file
-        if "No such file" in str(e) or "does not exist" in str(e):
+        # GeoPandas may raise various errors for file not found (e.g., DataSourceError from pyogrio)
+        # Check if it's a file-not-found scenario and convert to FileNotFoundError
+        error_type = type(e).__name__
+        error_msg = str(e)
+        if error_type == "DataSourceError" or "No such file" in error_msg or "does not exist" in error_msg:
             raise FileNotFoundError(
                 f"Country geometries file not found at '{filepath}'. "
                 f"Please ensure the file exists or update the path in config.yaml."
             ) from e
-        # Re-raise other exceptions
+        # Re-raise other exceptions as-is
         raise
 
     # Ensure ISO code column exists
