@@ -1,0 +1,321 @@
+---
+title: "Green Bond Tracker — Data Cleaning: World Bank GSSS Bond Issuance"
+author: "Green Bond Tracker Project"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Overview
+
+This notebook documents the cleaning and processing of the World Bank / IFC
+**Green, Social, Sustainability and Sustainability-Linked (GSSS) Bond Issuance**
+dataset. Our goal is to extract **green bond issuance data only**, organize it
+into a flat, map-ready table, and export a processed CSV that can be joined to
+country boundary polygons in ArcGIS Pro.
+
+## Data Source
+
+- **Provider:** World Bank Data360 / International Finance Corporation (IFC)
+- **Indicator:** `IFC_GB_GBAGG` — GSSS Bond Issuance
+- **Original source:** LSEG (formerly Refinitiv); IMF staff calculations
+- **Download URL:** <https://data360.worldbank.org/en/indicator/IFC_GB_GBAGG>
+- **Date accessed:** `r Sys.Date()`
+- **License:** World Bank Open Data (CC BY 4.0)
+
+## Why Green Bonds Only?
+
+The full dataset covers four ESG debt categories: Green, Social, Sustainability,
+and Sustainability-Linked bonds. For this project, we focus exclusively on
+**green bonds** — fixed-income instruments whose proceeds are directed to finance
+or refinance projects with environmental benefits. This keeps our map focused
+and our story clear: *Where in the world are green bonds being issued, and how
+much capital are they mobilizing?*
+
+# Setup
+
+```{r load-libraries}
+library(tidyverse)
+library(knitr)
+```
+
+# 1. Load the Raw Data
+
+The raw CSV lives in `data/raw/`. It is a wide, multi-dimensional dataset with
+one row per combination of country × bond type × issuer type × currency ×
+unit of measure × year.
+
+```{r load-data}
+raw <- read_csv("C:/Users/gabpe/OneDrive/Documents/src/green-bond-tracker-project/data/raw/IFC_GB_GBAGG.csv")
+
+cat("Dimensions:", nrow(raw), "rows ×", ncol(raw), "columns\n")
+```
+
+Let's inspect the structure:
+
+```{r inspect-structure}
+glimpse(raw)
+```
+
+# 2. Understand the Dimensions
+
+Before filtering, we need to understand the categorical breakdowns in this
+dataset. Each "dimension" multiplies the row count.
+
+```{r understand-dimensions}
+cat("Bond Types:\n")
+raw %>% distinct(BOND_TYPE, BOND_TYPE_LABEL) %>% kable()
+
+cat("\nIssuer Types:\n")
+raw %>% distinct(ISSUER_TYPE, ISSUER_TYPE_LABEL) %>% kable()
+
+cat("\nCurrency Types:\n")
+raw %>% distinct(CURRENCY, CURRENCY_LABEL) %>% kable()
+
+cat("\nUnit of Measure:\n")
+raw %>% distinct(UNIT_MEASURE, UNIT_MEASURE_LABEL, UNIT_MULT_LABEL) %>% kable()
+
+cat("\nTime Period Range:", min(raw$TIME_PERIOD), "to", max(raw$TIME_PERIOD), "\n")
+cat("Number of Entities (REF_AREA):", n_distinct(raw$REF_AREA), "\n")
+```
+
+# 3. Filter to Green Bonds Only
+
+We apply the following filters:
+
+1. **`BOND_TYPE == "GR"`** — Green bonds only.
+2. **`ISSUER_TYPE == "_T"`** — All issuer types combined (we want the total per
+   country, not the breakdown by who issued).
+3. **`CURRENCY == "_T"`** — All currencies combined (we want the full picture
+   regardless of whether bonds were issued in local or foreign currency).
+4. **`UNIT_MEASURE == "USD"`** — Values in US dollars (billions). This is the
+   only unit available for green bonds specifically; percentage-of-GDP data does
+   not exist for the green-only subset.
+
+```{r filter-green}
+green_bonds <- raw %>%
+  filter(
+    BOND_TYPE == "GR",
+    ISSUER_TYPE == "_T",
+    CURRENCY == "_T",
+    UNIT_MEASURE == "USD"
+  )
+
+cat("Rows after filtering:", nrow(green_bonds), "\n")
+cat("Entities remaining:", n_distinct(green_bonds$REF_AREA), "\n")
+cat("Year range:", min(green_bonds$TIME_PERIOD), "to", max(green_bonds$TIME_PERIOD), "\n")
+```
+
+# 4. Identify and Label Regional Aggregates
+
+The dataset contains both individual countries (ISO 3166-1 alpha-3 codes) and
+regional aggregates. We need to flag these so they can be handled appropriately.
+Regional aggregates are useful context but **cannot be joined to country
+polygons** on a map — they will live in a separate reference table.
+
+```{r flag-regions}
+# These codes represent regional aggregates, not individual countries
+region_codes <- c("ECA", "LAC", "MNA", "SSA", "AMRC", "EAP_EX_CHN")
+
+green_bonds <- green_bonds %>%
+  mutate(is_region = REF_AREA %in% region_codes)
+
+cat("Regional aggregates:", sum(green_bonds$is_region), "rows\n")
+cat("Individual countries:", sum(!green_bonds$is_region), "rows\n")
+```
+
+# 5. Remove Zero-Issuance Entities
+
+We only want entities (countries or regions) that have issued **at least one
+green bond in at least one year**. If a country has zero green bond issuance
+across all years, it is excluded entirely.
+
+```{r remove-zeros}
+# Identify entities with at least some green bond issuance
+entities_with_issuance <- green_bonds %>%
+  group_by(REF_AREA) %>%
+  summarise(cumulative = sum(OBS_VALUE, na.rm = TRUE)) %>%
+  filter(cumulative > 0) %>%
+  pull(REF_AREA)
+
+green_bonds <- green_bonds %>%
+  filter(REF_AREA %in% entities_with_issuance)
+
+cat("Entities with green bond issuance:", n_distinct(green_bonds$REF_AREA), "\n")
+cat("  Countries:", green_bonds %>%
+      filter(!is_region) %>%
+      distinct(REF_AREA) %>%
+      nrow(), "\n")
+cat("  Regions:", green_bonds %>%
+      filter(is_region) %>%
+      distinct(REF_AREA) %>%
+      nrow(), "\n")
+```
+
+# 6. Build the Processed Table
+
+We now reshape the data into a flat, map-ready format. For each entity, we
+compute:
+
+- **Issuance for the most recent year (2024)** in USD billions
+- **Cumulative all-time issuance (2012–2024)** in USD billions
+- **First year of issuance** — when the country entered the green bond market
+- **Number of active years** — how many years the country has issued green bonds
+
+```{r build-table}
+# Most recent year issuance
+latest_year <- max(green_bonds$TIME_PERIOD)
+
+issuance_latest <- green_bonds %>%
+  filter(TIME_PERIOD == latest_year) %>%
+  select(REF_AREA, REF_AREA_LABEL, OBS_VALUE, is_region) %>%
+  rename(green_issuance_latest_usd_b = OBS_VALUE)
+
+# Cumulative issuance
+cumulative <- green_bonds %>%
+  group_by(REF_AREA) %>%
+  summarise(
+    green_cumulative_usd_b = sum(OBS_VALUE, na.rm = TRUE),
+    first_year_issued = min(TIME_PERIOD[OBS_VALUE > 0]),
+    years_active = sum(OBS_VALUE > 0)
+  )
+
+# Join
+processed <- issuance_latest %>%
+  left_join(cumulative, by = "REF_AREA") %>%
+  arrange(desc(green_cumulative_usd_b))
+
+cat("Final processed table:", nrow(processed), "rows\n")
+```
+
+Let's preview the top entries:
+
+```{r preview-top}
+processed %>%
+  select(
+    ISO3 = REF_AREA,
+    Country = REF_AREA_LABEL,
+    Green_2024_USD_B = green_issuance_latest_usd_b,
+    Green_Cumulative_USD_B = green_cumulative_usd_b,
+    First_Year = first_year_issued,
+    Years_Active = years_active,
+    Is_Region = is_region
+  ) %>%
+  head(20) %>%
+  kable(digits = 3, caption = "Top 20 Green Bond Issuers (Cumulative)")
+```
+
+# 7. Build the Time Series Table
+
+For potential use in charts, dashboards, or ArcGIS time-enabled layers, we also
+export a long-format time series of annual green bond issuance for all entities
+that have ever issued.
+
+```{r build-timeseries}
+timeseries <- green_bonds %>%
+  select(
+    ISO3 = REF_AREA,
+    Country = REF_AREA_LABEL,
+    Year = TIME_PERIOD,
+    Green_Issuance_USD_B = OBS_VALUE,
+    Is_Region = is_region
+  ) %>%
+  arrange(ISO3, Year)
+
+cat("Time series table:", nrow(timeseries), "rows\n")
+cat("Covering", n_distinct(timeseries$ISO3), "entities across",
+    n_distinct(timeseries$Year), "years\n")
+```
+
+# 8. Summary Statistics
+
+Before exporting, let's document what we have.
+
+```{r summary-stats}
+cat("=== PROCESSED DATA SUMMARY ===\n\n")
+
+cat("Total entities:", nrow(processed), "\n")
+cat("  Countries:", sum(!processed$is_region), "\n")
+cat("  Regional aggregates:", sum(processed$is_region), "\n\n")
+
+cat("Latest year:", latest_year, "\n")
+cat("Entities with issuance in", latest_year, ":",
+    sum(processed$green_issuance_latest_usd_b > 0), "\n\n")
+
+cat("Global cumulative green bond issuance (countries only):\n")
+countries_only <- processed %>% filter(!is_region)
+cat("  Total: $", round(sum(countries_only$green_cumulative_usd_b), 2), "B\n")
+cat("  Mean per country: $",
+    round(mean(countries_only$green_cumulative_usd_b), 3), "B\n")
+cat("  Median per country: $",
+    round(median(countries_only$green_cumulative_usd_b), 3), "B\n\n")
+
+cat("Top 5 cumulative issuers:\n")
+countries_only %>%
+  slice_head(n = 5) %>%
+  mutate(label = paste0("  ", REF_AREA_LABEL, ": $",
+                        round(green_cumulative_usd_b, 2), "B")) %>%
+  pull(label) %>%
+  cat(sep = "\n")
+```
+
+# 9. Export
+
+We export two CSV files:
+
+1. **`green_bonds_by_country.csv`** — The flat, map-ready summary table (one row
+   per entity). This is what gets joined to country polygons in ArcGIS Pro.
+2. **`green_bonds_timeseries.csv`** — The annual time series for all entities.
+   Useful for charts and time-enabled map layers.
+
+```{r export}
+# Rename columns for clarity in ArcGIS Pro (short, no spaces, descriptive)
+export_summary <- processed %>%
+  transmute(
+    ISO3 = REF_AREA,
+    Country = REF_AREA_LABEL,
+    Green_2024_USD_B = round(green_issuance_latest_usd_b, 6),
+    Green_Cumulative_USD_B = round(green_cumulative_usd_b, 6),
+    First_Year = first_year_issued,
+    Years_Active = years_active,
+    Is_Region = is_region
+  )
+
+
+write_csv(export_summary, "../data/processed/green_bonds_by_country.csv")
+write_csv(timeseries, "../data/processed/green_bonds_timeseries.csv")
+
+
+cat("Exported:\n")
+cat("  data/processed/green_bonds_by_country.csv —",
+    nrow(export_summary), "rows\n")
+cat("  data/processed/green_bonds_timeseries.csv —",
+    nrow(timeseries), "rows\n")
+```
+
+# 10. Next Steps
+
+With the cleaned data exported, the next phase of the project involves:
+
+1. **Open ArcGIS Pro** and create a new Map project.
+2. **Add a world countries boundary layer** from ArcGIS Living Atlas.
+3. **Import `green_bonds_by_country.csv`** as a standalone table.
+4. **Join the table to the country polygons** using the `ISO3` field.
+5. **Symbolize the map** — graduated colors by `Green_Cumulative_USD_B` or
+   `Green_2024_USD_B`.
+6. **Add the IMF Carbon Footprint of Bank Loans layer** as a second thematic
+   layer to provide the contrast analysis.
+7. **Publish to ArcGIS Online** as a public web map.
+
+---
+
+*This notebook is part of the [Green Bond Tracker Project](https://github.com/YOUR_USERNAME/green-bond-tracker-project).
+Data sourced from the World Bank Data360 platform under CC BY 4.0 license.*
