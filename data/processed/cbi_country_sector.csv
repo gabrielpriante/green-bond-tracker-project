@@ -1,0 +1,193 @@
+ISO2,ISO3,Issuer Country,Primary_Sector,Bond_Count,Total_USD_B
+AE,ARE,United Arab Emirates,Solar,4,4.69315
+AE,ARE,United Arab Emirates,Solar Wind Grids Marine Renewables,2,1
+AE,ARE,United Arab Emirates,Solarwind,1,0.75
+AU,AUS,Australia,Low Carbon Transport,14,6.065493995000001
+AU,AUS,Australia,Low Carbon Transportsolarwater Infrastructure,3,6.039334
+AU,AUS,Australia,Low Carbon Buildings,66,5.419874515
+AU,AUS,Australia,Low Carbon Transportwater Infrastructure,3,2.4351700000000003
+AU,AUS,Australia,Low Carbon Transportlow Carbon Buildings,3,2.03953
+AU,AUS,Australia,Solar,23,1.637661583
+AU,AUS,Australia,Forestrygeothermalhydropowerlow Carbon Transportlow Carbon Buildings,1,1.3919125
+AU,AUS,Australia,Electrical Grids And Storage,15,1.2170861
+AU,AUS,Australia,Low Carbon Transport Buildings Solar,1,1.215
+AU,AUS,Australia,Low Carbon Transportsolar,2,0.7084882
+AU,AUS,Australia,Solarwind,2,0.6874
+AU,AUS,Australia,Low Carbon Buildingslow Carbon Transportsolarwind,1,0.589
+AU,AUS,Australia,Low Carbon Buildingssolarwind,1,0.464
+AU,AUS,Australia,Wind,3,0.392591
+AU,AUS,Australia,Forestry Low Carbon Transport Solar Grids Water Wind,4,0.357851277
+AU,AUS,Australia,Windlow Carbon Buildingssolar,1,0.284002
+AU,AUS,Australia,Solar Low Carbon Transport,1,0.133432
+AU,AUS,Australia,Low Carbon Transport Solar,1,0.113085986
+AU,AUS,Australia,Low Carbon Buildings Low Carbon Transportsolarwind,1,0.091
+AU,AUS,Australia,Low Carbon Buildingswind,1,0
+BE,BEL,Belgium,Low Carbon Buildings,3,1.984871
+BO,BOL,Bolivia,Solar,1,0.014507254
+BR,BRA,Brazil,Bioenergy,12,1.063771859
+BR,BRA,Brazil,Solar,17,0.585315862
+BR,BRA,Brazil,Low Carbon Transport,1,0.5
+BR,BRA,Brazil,Wind,11,0.41256184
+BR,BRA,Brazil,Water Infrastructure,1,0.1663
+BR,BRA,Brazil,Agriculture,5,0.07349425
+BR,BRA,Brazil,Forestry,1,0.001481536
+BB,BRB,Barbados,Solar,2,0.019000000000000003
+CH,CHE,Switzerland,Low Carbon Buildings,1,0.861712
+CH,CHE,Switzerland,Low Carbon Transport,1,0.200064
+CH,CHE,Switzerland,Wind,1,0.106
+CL,CHL,Chile,Low Carbon Buildings,5,5.297
+CL,CHL,Chile,Low Carbon Transport,2,2.1479999999999997
+CL,CHL,Chile,Transport,1,0
+CN,CHN,China,Low Carbon Transport,11,18.1624474
+CN,CHN,China,Low Carbon Transportmarine Renewable Energysolarwind,2,4.81022
+CN,CHN,China,Low Carbon Transportsolarwind,3,2.826276
+CN,CHN,China,Solarwindlow Carbon Transport,1,2.14
+CN,CHN,China,Wind,4,1.572976689
+CN,CHN,China,Solar Wind,6,1.2094487999999999
+CN,CHN,China,Low Carbon Transportmarine Renewable Energywater Infrastructurewind,1,1
+CN,CHN,China,Low Carbon Transportwindsolar,1,1
+CN,CHN,China,Low Carbon Transport Marine Renewable Energywater Infrastructure Wind,1,0.589
+CN,CHN,China,Low Carbon Transportwater Infrastructure,1,0.379
+CN,CHN,China,Low Carbon Transportlow Carbon Buildings,1,0.3
+CN,CHN,China,Solar,1,0.149
+CN,CHN,China,Water Infrastructure,1,0.0728
+CN,CHN,China,Solarwater Infrastructure,1,0.057
+CI,CIV,Cote d'Ivoire,Low Carbon Buildings,1,0.0178775
+CO,COL,Colombia,Solar,1,0.0243
+CO,COL,Colombia,Low Carbon Transport,1,0
+CR,CRI,Costa Rica,Hydropower,1,0.15
+CY,CYP,Cyprus,Solar,1,0.00561432
+DE,DEU,Germany,Low Carbon Transport,3,4.3416
+DE,DEU,Germany,Low Carbon Buildings,5,2.368
+DE,DEU,Germany,Marine Renewable Energy,2,1.356
+DE,DEU,Germany,Marine Renewable Energysolarwind,1,1.12
+DE,DEU,Germany,Low Carbon Transportmarine Renewable Energysolarwind,2,1.003851
+DE,DEU,Germany,Wind,3,0.9819
+DE,DEU,Germany,Low,1,0.93
+DE,DEU,Germany,Solar Transport Wind,1,0.71
+DE,DEU,Germany,Low Carbon Transportmarine Rewable Energysolarwind,1,0.590703
+DE,DEU,Germany,Windsolar,1,0.56975
+DE,DEU,Germany,Solar Wind,1,0.568
+DE,DEU,Germany,Electrical Grids And Storage,1,0.433851
+DE,DEU,Germany,Solar,2,0.0897
+DO,DOM,Dominican Republic,Solarwind,1,0.1
+DO,DOM,Dominican Republic,Solar Wind,1,0.00503364
+EG,EGY,Egypt,Solar,1,0.3345
+ES,ESP,Spain,Solar,1,0.075
+FR,FRA,France,Low Carbon Transport,65,48.200167766
+FR,FRA,France,Low Carbon Buildings,2,1.6780000000000002
+FR,FRA,France,Low Carbon Transportwind,1,1.45
+FR,FRA,France,Solarwind,1,0.051
+FR,FRA,France,Solar,1,0
+GB,GBR,United Kingdom,Low Carbon Buildings,6,1.20188393
+GB,GBR,United Kingdom,Solarwindlow Carbon Transport,1,0.533
+GB,GBR,United Kingdom,Marine Renewable Energy,1,0.481
+GB,GBR,United Kingdom,Windsolarmarine Renewables,5,0.18929778800000002
+GB,GBR,United Kingdom,Marine Renewable Energysolarwind,5,0.106697571
+GB,GBR,United Kingdom,Low Carbon Transport,2,0.0638
+GB,GBR,United Kingdom,Low Carbon Transportlow Carbon Buildingsmarinesolar,1,0.0302
+GB,GBR,United Kingdom,Solar,6,0.0239
+GB,GBR,United Kingdom,Low Carbon Transportlow Carbon Buildingsmarine Renewableswind,1,0.02022643
+GB,GBR,United Kingdom,Energy,1,0
+GR,GRC,Greece,Solarwind,1,0.677
+GR,GRC,Greece,Wind,1,0.167
+HK,HKG,Hong Kong,Low Carbon Transportwindwater Infrastructure,1,1.62
+HK,HKG,Hong Kong,Wind,2,1.5
+HU,HUN,Hungary,Low Carbon Buildings,1,0.0320148
+IN,IND,India,Solarwind,16,4.0788
+IN,IND,India,Low Carbon Transport,6,3.765933858
+IN,IND,India,Solar,19,1.5067656950000001
+IN,IND,India,Solar Wind,4,1.045
+IN,IND,India,Low Carbon Buildings,2,0.5481216
+IN,IND,India,Wind,17,0.19284
+IN,IND,India,Transport Solar Water Waste Wind,1,0.0225478
+IN,IND,India,Water Infrastructure,1,0.0120612
+IN,IND,India,Solar Wind Low Carbon Transport Waste,1,0
+IN,IND,India,Windsolar,2,0
+IT,ITA,Italy,Low Carbon Transport,3,2.356531
+JP,JPN,Japan,Transport Buildings Grids R,2,10.627085525999998
+JP,JPN,Japan,Low Carbon Transport,35,3.3912
+JP,JPN,Japan,Resilience Water Grids,1,0.350619
+JP,JPN,Japan,Windmarine Renewable Energygeothermal,2,0.29542999999999997
+JP,JPN,Japan,Wind,2,0.193
+JP,JPN,Japan,Solar,1,0.0962
+JP,JPN,Japan,Marine Renewable Energy,1,0.095
+JP,JPN,Japan,Windmarine Renewable Energygeothermalsolar,1,0.095
+JP,JPN,Japan,Marine Renewable Energygeothermalwind,1,0.0880665
+JP,JPN,Japan,Low Carbon Transportsolar,1,0.0555
+JP,JPN,Japan,Waste Management,1,0.017
+JP,JPN,Japan,Geothermal,1,0
+JP,JPN,Japan,Windsolar,1,0
+KZ,KAZ,Kazakhstan,Solarwind,1,0.015
+KE,KEN,Kenya,Low Carbon Buildings,2,0.095490665
+KR,KOR,"Korea, Republic of",Low Carbon Transport,1,0.5
+LU,LUX,Luxembourg,Low Carbon Transport,3,0.6738000000000001
+LU,LUX,Luxembourg,Solar,1,0.55
+MA,MAR,Morocco,Low Carbon Transport,2,0.29546700000000004
+MA,MAR,Morocco,Solar,1,0.115
+MX,MEX,Mexico,Wind,2,0.5
+MX,MEX,Mexico,Protected Agriculture,1,0.13
+MX,MEX,Mexico,Protected Agriculturewater Infrastructuresolarforestry,1,0.129
+MX,MEX,Mexico,Low Carbon Buildings,3,0.072127514
+MU,MUS,Mauritius,Solarwind,4,1.6179999999999999
+MU,MUS,Mauritius,Solar,2,0.9139999999999999
+MY,MYS,Malaysia,Solar,1,0.083
+NG,NGA,Nigeria,Solar,7,0.056476935
+NG,NGA,Nigeria,Solarwater Infrastructurelow Carbon Transport,1,0.0418
+NG,NGA,Nigeria,Solar Transport,1,0.0125
+NG,NGA,Nigeria,Agriculture Solar Water,1,0.0102127
+NL,NLD,Netherlands,Low Carbon Buildings,22,27.56377942
+NL,NLD,Netherlands,Low Carbon Transportlow Carbon Buildingsmarinesolarwaterwind,1,5.2085155930000004
+NL,NLD,Netherlands,Low Carbon Transport,2,2.18658
+NO,NOR,Norway,Low Carbon Buildings,11,10.7801125
+NO,NOR,Norway,Low Carbon Transport,1,0.104
+NZ,NZL,New Zealand,Electrical Grids And Storage,25,5.297666185
+NZ,NZL,New Zealand,Geothermal,7,1.773084229
+NZ,NZL,New Zealand,Wind,7,0.852974
+NZ,NZL,New Zealand,Windgeothermal,4,0.5923868000000001
+NZ,NZL,New Zealand,Shipping,1,0.246898
+NZ,NZL,New Zealand,Low Carbon Transport,2,0.23620000000000002
+NZ,NZL,New Zealand,Geothermal Hydropower,2,0
+NZ,NZL,New Zealand,Solar,1,0
+PA,PAN,Panama,Wind,1,0.125
+PA,PAN,Panama,Solar,1,0.015
+PA,PAN,Panama,Low Carbon Transportsolar,1,0.01
+PA,PAN,Panama,Solar Transport,1,0.01
+PE,PER,Peru,Forestry,1,0.045
+PH,PHL,Philippines,Solarwindgeothermal,1,0.47
+PH,PHL,Philippines,Geothermal,1,0.225
+PL,POL,Poland,Low Carbon Buildings,5,1.340392
+PL,POL,Poland,Wind Solar Low Carbon Buildings,1,0.8023725
+PL,POL,Poland,Low Carbon Transport Solar Wind Marine Renewable Energy Waste Management,1,0.611
+PL,POL,Poland,Solar Wind Residential Buildings,1,0.580565
+PL,POL,Poland,Solar Wind Low Carbon Buildings,1,0.557805
+SG,SGP,Singapore,Solarwind,3,0.6287667
+SG,SGP,Singapore,Low Carbon Buildings,1,0.071
+SG,SGP,Singapore,Solar,4,0
+SG,SGP,Singapore,Solar Wind,1,0
+SG,SGP,Singapore,Wind,1,0
+SE,SWE,Sweden,Low Carbon Buildings,2,0.05293048
+SE,SWE,Sweden,Solar,1,0.00955413
+TH,THA,Thailand,Low Carbon Transport,4,2.214349178
+TH,THA,Thailand,Solar Wind,1,0.934
+TH,THA,Thailand,Solar,2,0.5982
+TH,THA,Thailand,Solarwind,2,0.44244129
+TH,THA,Thailand,Wind,4,0.3729
+TH,THA,Thailand,Forestry,1,0.065
+TH,THA,Thailand,Geothermal,1,0
+US,USA,United States,Low Carbon Transport,59,33.031308066
+US,USA,United States,Water Infrastructure,30,6.83356
+US,USA,United States,Low Carbon Buildings,35,6.00614
+US,USA,United States,Solar,8,1.2659390000000001
+US,USA,United States,Low Carbon Transport Shipping,2,0.65
+US,USA,United States,Steel,1,0.33
+US,USA,United States,Electrical Grids And Storage,3,0.27601
+US,USA,United States,Marine Renewable Energy,1,0.16
+US,USA,United States,Geothermal,3,0
+US,USA,United States,Solar Wind Transport,1,0
+VN,VNM,Vietnam,Solar,2,0.34650000000000003
+VN,VNM,Vietnam,Wind,5,0.173
+VN,VNM,Vietnam,Low Carbon Transport,1,0
+ZA,ZAF,South Africa,Solar,2,0.647099435
+ZA,ZAF,South Africa,Solarwind,2,0.184
+ZA,ZAF,South Africa,Water,1,0.076

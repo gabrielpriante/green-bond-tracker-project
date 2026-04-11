@@ -1,0 +1,317 @@
+---
+title: "Green Bond Tracker — Combine All Sources for ArcGIS Pro"
+author: "Green Bond Tracker Project"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Overview
+
+This is the final data preparation notebook. It merges all four processed
+datasets into a **single master CSV** that can be joined to country polygons in
+ArcGIS Pro with one join operation. No more stacking joins — one file, one join,
+all data.
+
+## Datasets Being Combined
+
+| # | Source | Notebook | Countries | Key Fields |
+|---|--------|----------|-----------|------------|
+| 1 | World Bank / IFC | 01, 02 | 70 | Green bond issuance (emerging markets focus) |
+| 2 | IMF / LSEG | 04 | 90 | Green bond issuance (global, incl. advanced economies) + sovereign |
+| 3 | IMF | 03 | 40 | Carbon footprint of bank loans |
+| 4 | Climate Bonds Initiative | 05 | 47 | Certified bonds (count, value, sectors) |
+
+Combined, these cover **114 unique countries**.
+
+## Handling Overlap
+
+The World Bank and IMF green bond datasets overlap for ~49 countries. They come
+from different providers (IFC vs. LSEG/Refinitiv) and use slightly different
+methodologies, so values will not match exactly. Our approach:
+
+- We keep **both** sets of values in separate columns so users can compare.
+- We create a **Best Estimate** column that takes the IMF value when available
+  (broader coverage, includes advanced economies), falling back to the World Bank
+  value for countries only in that dataset.
+
+# Setup
+
+```{r load-libraries}
+library(tidyverse)
+library(knitr)
+```
+
+# 1. Load All Processed Datasets
+
+**Important:** Namibia's ISO2 code is literally `"NA"`, which R's `read_csv`
+interprets as a missing value. We prevent this with `na = c("")` so that only
+empty strings are treated as NA.
+
+```{r load-data}
+wb <- read_csv(
+  "../data/processed/green_bonds_by_country_iso2.csv",
+  na = c("")
+)
+imf <- read_csv(
+  "../data/processed/imf_green_bonds_by_country.csv",
+  na = c("")
+)
+cfbl <- read_csv(
+  "../data/processed/cfbl_by_country.csv",
+  na = c("")
+)
+cbi <- read_csv(
+  "../data/processed/cbi_by_country.csv",
+  na = c("")
+)
+
+cat("World Bank:", nrow(wb), "countries\n")
+cat("IMF Green Bonds:", nrow(imf), "countries\n")
+cat("CFBL:", nrow(cfbl), "countries\n")
+cat("CBI:", nrow(cbi), "countries\n")
+```
+
+Quick Namibia check:
+
+```{r namibia-check}
+cat("Namibia in WB — ISO2:", wb$ISO2[wb$ISO3 == "NAM"], "\n")
+cat("Namibia in IMF — ISO2:", imf$ISO2[imf$ISO3 == "NAM"], "\n")
+```
+
+If Namibia's ISO2 still shows as `NA` (missing), we fix it manually:
+
+```{r fix-namibia}
+wb$ISO2[wb$ISO3 == "NAM"] <- "NA"
+imf$ISO2[imf$ISO3 == "NAM"] <- "NA"
+```
+
+# 2. Build the Master Country List
+
+We start from the union of all ISO2 codes across all four datasets, then join
+each source onto that scaffold.
+
+```{r build-scaffold}
+# Collect all ISO2-ISO3-Country combinations from all sources
+all_countries <- bind_rows(
+  wb %>% select(ISO2, ISO3, Country),
+  imf %>% select(ISO2, ISO3, Country),
+  cfbl %>% select(ISO2, ISO3, Country),
+  cbi %>% select(ISO2, ISO3, Country = `Issuer Country`)
+) %>%
+  # Prefer IMF country names (most standardized), then WB, then CBI
+  group_by(ISO2) %>%
+  slice_head(n = 1) %>%
+  ungroup() %>%
+  arrange(ISO2)
+
+cat("Master country list:", nrow(all_countries), "unique countries\n")
+```
+
+# 3. Join All Sources
+
+```{r join-all}
+master <- all_countries %>%
+  # World Bank green bond data
+  left_join(
+    wb %>% select(
+      ISO2,
+      WB_Green_2024 = Green_2024_USD_B,
+      WB_Green_Cumul = Green_Cumulative_USD_B,
+      WB_First_Year = First_Year,
+      WB_Years_Active = Years_Active
+    ),
+    by = "ISO2"
+  ) %>%
+  # IMF/LSEG green bond data
+  left_join(
+    imf %>% select(
+      ISO2,
+      IMF_Green_2024 = IMF_Green_2024_USD_B,
+      IMF_Green_Cumul = IMF_Green_Cumulative_USD_B,
+      Sov_Green_Cumul = Sovereign_Green_Cumulative_USD_B,
+      Sov_Share_Pct = Sovereign_Share_Pct
+    ),
+    by = "ISO2"
+  ) %>%
+  # Carbon footprint of bank loans
+  left_join(
+    cfbl %>% select(
+      ISO2,
+      CFBL_2018,
+      CFBL_Trend,
+      CFBL_Mean
+    ),
+    by = "ISO2"
+  ) %>%
+  # CBI certified bonds
+  left_join(
+    cbi %>% select(
+      ISO2,
+      CBI_Count = CBI_Bond_Count,
+      CBI_USD_B = CBI_Total_USD_B,
+      CBI_Issuers = CBI_Unique_Issuers
+    ),
+    by = "ISO2"
+  )
+
+cat("Master table:", nrow(master), "rows ×", ncol(master), "columns\n")
+```
+
+# 4. Create Best-Estimate Columns
+
+For the map's primary symbology, we need a single "green bond issuance" value
+per country. We prefer the IMF data (broader coverage) and fall back to World
+Bank where IMF is missing.
+
+```{r best-estimate}
+master <- master %>%
+  mutate(
+    Green_2024_Best = coalesce(IMF_Green_2024, WB_Green_2024),
+    Green_Cumul_Best = coalesce(IMF_Green_Cumul, WB_Green_Cumul),
+    Data_Sources = paste0(
+      ifelse(!is.na(WB_Green_Cumul), "WB", ""),
+      ifelse(!is.na(IMF_Green_Cumul), "+IMF", ""),
+      ifelse(!is.na(CFBL_2018), "+CFBL", ""),
+      ifelse(!is.na(CBI_Count), "+CBI", "")
+    ) %>% str_remove("^\\+")
+  )
+```
+
+# 5. Add Coverage Flags
+
+Boolean flags make it easy to filter in ArcGIS Pro.
+
+```{r flags}
+master <- master %>%
+  mutate(
+    Has_WB = !is.na(WB_Green_Cumul),
+    Has_IMF = !is.na(IMF_Green_Cumul),
+    Has_CFBL = !is.na(CFBL_2018),
+    Has_CBI = !is.na(CBI_Count),
+    Source_Count = Has_WB + Has_IMF + Has_CFBL + Has_CBI
+  )
+
+cat("\n=== DATA COVERAGE ===\n")
+cat("Countries with World Bank data:", sum(master$Has_WB), "\n")
+cat("Countries with IMF data:", sum(master$Has_IMF), "\n")
+cat("Countries with CFBL data:", sum(master$Has_CFBL), "\n")
+cat("Countries with CBI data:", sum(master$Has_CBI), "\n")
+cat("Countries with 1 source:", sum(master$Source_Count == 1), "\n")
+cat("Countries with 2 sources:", sum(master$Source_Count == 2), "\n")
+cat("Countries with 3 sources:", sum(master$Source_Count == 3), "\n")
+cat("Countries with all 4 sources:", sum(master$Source_Count == 4), "\n")
+```
+
+# 6. Final Column Order and Preview
+
+```{r reorder}
+master_export <- master %>%
+  select(
+    # Identity
+    ISO2, ISO3, Country,
+    # Best estimate (use for primary symbology)
+    Green_2024_Best, Green_Cumul_Best,
+    # World Bank detail
+    WB_Green_2024, WB_Green_Cumul, WB_First_Year, WB_Years_Active,
+    # IMF/LSEG detail
+    IMF_Green_2024, IMF_Green_Cumul, Sov_Green_Cumul, Sov_Share_Pct,
+    # Carbon footprint
+    CFBL_2018, CFBL_Trend, CFBL_Mean,
+    # CBI certified
+    CBI_Count, CBI_USD_B, CBI_Issuers,
+    # Metadata
+    Data_Sources, Source_Count
+  ) %>%
+  arrange(desc(Green_Cumul_Best))
+
+cat("Final master table:", nrow(master_export), "rows ×",
+    ncol(master_export), "columns\n")
+```
+
+```{r preview-top}
+master_export %>%
+  head(25) %>%
+  kable(digits = 3, caption = "Top 25 countries by best-estimate cumulative green issuance")
+```
+
+# 7. Summary Statistics
+
+```{r summary}
+cat("=== FINAL SUMMARY ===\n\n")
+
+cat("Total countries:", nrow(master_export), "\n\n")
+
+cat("Green bond issuance (best estimate):\n")
+cat("  Global cumulative: $",
+    round(sum(master_export$Green_Cumul_Best, na.rm = TRUE), 1), "B\n")
+cat("  Global 2024: $",
+    round(sum(master_export$Green_2024_Best, na.rm = TRUE), 1), "B\n")
+cat("  Countries with any issuance:",
+    sum(master_export$Green_Cumul_Best > 0, na.rm = TRUE), "\n\n")
+
+cat("Sovereign green bonds:\n")
+cat("  Countries with sovereign issuance:",
+    sum(master_export$Sov_Green_Cumul > 0, na.rm = TRUE), "\n")
+cat("  Total sovereign: $",
+    round(sum(master_export$Sov_Green_Cumul, na.rm = TRUE), 1), "B\n\n")
+
+cat("Carbon footprint of bank loans:\n")
+cat("  Countries with CFBL data:", sum(!is.na(master_export$CFBL_2018)), "\n")
+cat("  Highest: ",
+    master_export$Country[which.max(master_export$CFBL_2018)], "(",
+    round(max(master_export$CFBL_2018, na.rm = TRUE), 0), ")\n")
+cat("  Lowest: ",
+    master_export$Country[which.min(master_export$CFBL_2018)], "(",
+    round(min(master_export$CFBL_2018, na.rm = TRUE), 0), ")\n\n")
+
+cat("CBI certified bonds:\n")
+cat("  Countries with certified bonds:", sum(!is.na(master_export$CBI_Count)), "\n")
+cat("  Total certified bonds:", sum(master_export$CBI_Count, na.rm = TRUE), "\n")
+cat("  Total certified value: $",
+    round(sum(master_export$CBI_USD_B, na.rm = TRUE), 1), "B\n")
+```
+
+# 8. Export
+
+```{r export}
+write_csv(master_export, "../data/processed/map_data_combined.csv",
+          na = "")
+
+cat("Exported:\n")
+cat("  ../data/processed/map_data_combined.csv —",
+    nrow(master_export), "rows ×", ncol(master_export), "columns\n")
+```
+
+# 9. ArcGIS Pro Instructions
+
+With `map_data_combined.csv` in hand, here's the complete ArcGIS workflow:
+
+1. **Remove all existing joins** from `World_Countries_Generalized`:
+   - Right-click the layer → **Joins and Relates** → **Remove All Joins**
+2. **Remove the old standalone table** (`green_bonds_by_country_iso2.csv`)
+   from the project.
+3. **Add Data** → navigate to
+   `data/processed/map_data_combined.csv`.
+4. **Right-click** `World_Countries_Generalized` → **Joins and Relates** →
+   **Add Join**:
+   - **Input Join Field:** `Two-character ISO Code for the Country`
+   - **Join Table:** `map_data_combined.csv`
+   - **Join Table Field:** `ISO2`
+5. **Symbolize** with Graduated Colors on `Green_Cumul_Best` for the
+   primary green bond story.
+6. Optionally add a second layer or use the `CFBL_2018` field for a bivariate
+   map comparing green bond issuance to carbon footprint.
+
+---
+
+*This notebook is part of the
+[Green Bond Tracker Project](https://github.com/YOUR_USERNAME/green-bond-tracker-project).*

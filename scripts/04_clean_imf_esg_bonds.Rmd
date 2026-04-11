@@ -1,0 +1,256 @@
+---
+title: "Green Bond Tracker — Data Cleaning: IMF ESG Bond Issuances"
+author: "Green Bond Tracker Project"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Overview
+
+This notebook processes the IMF Climate Data Dashboard's **ESG Bond Issuances**
+dataset — a comprehensive source originally from LSEG (formerly Refinitiv). This
+dataset covers **109 countries** including many advanced economies that our World
+Bank dataset (focused on emerging markets) does not. It also provides sovereign
+green bond issuances as a separate indicator, which tells us specifically about
+government-led green finance commitments.
+
+## Why This Dataset Matters
+
+Our World Bank GSSS dataset (notebook 01) covers **70 countries**, mostly
+emerging markets and developing economies. This IMF dataset adds **41 additional
+countries** — including the United States, Germany, France, the UK, Japan,
+Australia, and other major issuers. Combining the two gives us the most complete
+global picture available.
+
+## Data Source
+
+- **Provider:** IMF Climate Change Indicators Dashboard / LSEG (Refinitiv)
+- **Download page:** <https://climatedata.imf.org/datasets/8e2772e0b65f4e33a80183ce9583d062_0/explore>
+- **Date accessed:** `r Sys.Date()`
+- **Time coverage:** 2006–2024
+- **Units:** Billion US Dollars
+
+# Setup
+
+```{r load-libraries}
+# install.packages("countrycode")  # Uncomment if not yet installed
+library(tidyverse)
+library(countrycode)
+library(knitr)
+```
+
+# 1. Load the Raw Data
+
+```{r load-data}
+raw <- read_csv("../data/raw/Green_Bonds.csv")
+
+cat("Dimensions:", nrow(raw), "rows ×", ncol(raw), "columns\n")
+cat("Countries:", n_distinct(raw$Country), "\n")
+cat("Indicators:", n_distinct(raw$Indicator), "\n")
+```
+
+# 2. Understand the Indicators
+
+This dataset is much richer than the World Bank one — it contains 25 different
+indicators covering issuances, outstanding amounts, sovereign breakdowns, and
+currency splits.
+
+```{r list-indicators}
+raw %>%
+  count(Indicator) %>%
+  arrange(desc(n)) %>%
+  kable(caption = "Available indicators and row counts")
+```
+
+For our green bond map, we care about these indicators:
+
+1. **`Green Bond Issuances by Country`** — Total green bond issuance per country
+   per year. This is our primary layer.
+2. **`Sovereign Green Bond Issuances`** — Green bonds issued specifically by
+   governments. This enriches the story.
+
+The other indicators (social bonds, sustainability bonds, outstanding amounts,
+currency splits, issuer-type breakdowns) are available for future analysis but
+fall outside our green-bond-only scope.
+
+# 3. Extract Green Bond Issuances by Country
+
+```{r filter-green-by-country}
+year_cols <- paste0("F", 2006:2024)
+
+green_by_country <- raw %>%
+  filter(Indicator == "Green Bond Issuances by Country") %>%
+  select(Country, ISO2, ISO3, all_of(year_cols))
+
+cat("Countries with green bond issuance data:", nrow(green_by_country), "\n")
+```
+
+## 3a. Reshape to Long Format
+
+```{r reshape-green}
+green_long <- green_by_country %>%
+  pivot_longer(
+    cols = all_of(year_cols),
+    names_to = "Year",
+    values_to = "Green_Issuance_USD_B"
+  ) %>%
+  mutate(Year = as.integer(str_remove(Year, "F"))) %>%
+  replace_na(list(Green_Issuance_USD_B = 0))
+
+cat("Long-format rows:", nrow(green_long), "\n")
+```
+
+## 3b. Build Country Summary
+
+```{r green-summary}
+imf_green_summary <- green_long %>%
+  group_by(Country, ISO2, ISO3) %>%
+  summarise(
+    IMF_Green_2024_USD_B = sum(Green_Issuance_USD_B[Year == 2024]),
+    IMF_Green_Cumulative_USD_B = sum(Green_Issuance_USD_B),
+    IMF_Green_First_Year = ifelse(
+      any(Green_Issuance_USD_B > 0),
+      min(Year[Green_Issuance_USD_B > 0]),
+      NA_integer_
+    ),
+    IMF_Green_Years_Active = sum(Green_Issuance_USD_B > 0),
+    .groups = "drop"
+  ) %>%
+  filter(IMF_Green_Cumulative_USD_B > 0) %>%
+  arrange(desc(IMF_Green_Cumulative_USD_B))
+
+cat("Countries with any green bond issuance:", nrow(imf_green_summary), "\n")
+```
+
+```{r preview-green}
+imf_green_summary %>%
+  head(20) %>%
+  kable(digits = 3, caption = "Top 20 green bond issuers (IMF/LSEG data)")
+```
+
+# 4. Extract Sovereign Green Bond Issuances
+
+Sovereign green bonds are a subset — bonds issued by central governments. This
+tells us which governments are putting their money where their mouth is on
+climate policy.
+
+```{r filter-sovereign}
+sovereign <- raw %>%
+  filter(Indicator == "Sovereign Green Bond Issuances") %>%
+  select(Country, ISO2, ISO3, all_of(year_cols))
+
+sovereign_long <- sovereign %>%
+  pivot_longer(
+    cols = all_of(year_cols),
+    names_to = "Year",
+    values_to = "Sovereign_Green_USD_B"
+  ) %>%
+  mutate(Year = as.integer(str_remove(Year, "F"))) %>%
+  replace_na(list(Sovereign_Green_USD_B = 0))
+
+sovereign_summary <- sovereign_long %>%
+  group_by(Country, ISO2, ISO3) %>%
+  summarise(
+    Sovereign_Green_Cumulative_USD_B = sum(Sovereign_Green_USD_B),
+    Sovereign_First_Year = ifelse(
+      any(Sovereign_Green_USD_B > 0),
+      min(Year[Sovereign_Green_USD_B > 0]),
+      NA_integer_
+    ),
+    .groups = "drop"
+  ) %>%
+  filter(Sovereign_Green_Cumulative_USD_B > 0) %>%
+  arrange(desc(Sovereign_Green_Cumulative_USD_B))
+
+cat("Countries with sovereign green bonds:", nrow(sovereign_summary), "\n")
+```
+
+```{r preview-sovereign}
+sovereign_summary %>%
+  head(15) %>%
+  kable(digits = 3, caption = "Top 15 sovereign green bond issuers")
+```
+
+# 5. Merge Green and Sovereign Data
+
+We combine both into a single country-level table so each country shows total
+green issuance alongside sovereign green issuance.
+
+```{r merge-green-sovereign}
+imf_combined <- imf_green_summary %>%
+  left_join(
+    sovereign_summary %>%
+      select(ISO3, Sovereign_Green_Cumulative_USD_B, Sovereign_First_Year),
+    by = "ISO3"
+  ) %>%
+  replace_na(list(Sovereign_Green_Cumulative_USD_B = 0)) %>%
+  mutate(
+    Sovereign_Share_Pct = round(
+      Sovereign_Green_Cumulative_USD_B / IMF_Green_Cumulative_USD_B * 100, 1
+    )
+  )
+
+cat("Final combined table:", nrow(imf_combined), "countries\n")
+```
+
+```{r preview-combined}
+imf_combined %>%
+  head(20) %>%
+  kable(digits = 3,
+        caption = "Top 20 — total green issuance with sovereign share")
+```
+
+# 6. Compare with World Bank Data
+
+```{r compare-wb}
+wb <- read_csv("../data/processed/green_bonds_by_country.csv") %>%
+  filter(Is_Region == FALSE)
+
+imf_iso3 <- imf_combined$ISO3
+wb_iso3 <- wb$ISO3
+
+cat("=== COVERAGE COMPARISON ===\n")
+cat("IMF/LSEG countries:", length(imf_iso3), "\n")
+cat("World Bank/IFC countries:", length(wb_iso3), "\n")
+cat("In both:", length(intersect(imf_iso3, wb_iso3)), "\n")
+cat("Only in IMF:", length(setdiff(imf_iso3, wb_iso3)), "\n")
+cat("Only in World Bank:", length(setdiff(wb_iso3, imf_iso3)), "\n")
+cat("Combined unique countries:", length(union(imf_iso3, wb_iso3)), "\n")
+```
+
+The IMF dataset adds major advanced economies. Together the two datasets give us
+the most complete global picture of green bond issuance.
+
+# 7. Export
+
+```{r export}
+write_csv(imf_combined, "../data/processed/imf_green_bonds_by_country.csv")
+write_csv(green_long, "../data/processed/imf_green_bonds_timeseries.csv")
+
+cat("Exported:\n")
+cat("  ../data/processed/imf_green_bonds_by_country.csv —",
+    nrow(imf_combined), "rows\n")
+cat("  ../data/processed/imf_green_bonds_timeseries.csv —",
+    nrow(green_long), "rows\n")
+```
+
+# 8. Next Steps
+
+The IMF/LSEG and World Bank/IFC datasets overlap for 49 countries but each has
+unique entries. In the final combination notebook (`06_combine_for_arcgis.Rmd`),
+we will merge all sources into one master table for the ArcGIS Pro join.
+
+---
+
+*This notebook is part of the
+[Green Bond Tracker Project](https://github.com/YOUR_USERNAME/green-bond-tracker-project).
+Data sourced from the IMF Climate Change Indicators Dashboard (LSEG/Refinitiv).*

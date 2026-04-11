@@ -1,0 +1,298 @@
+---
+title: "Green Bond Tracker — Data Cleaning: Climate Bonds Initiative Certified Bonds"
+author: "Green Bond Tracker Project"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Overview
+
+This notebook processes the **Climate Bonds Initiative (CBI) Certified Climate
+Bonds Database** — a bond-level dataset of instruments that have been
+independently verified and certified under the Climate Bonds Standard. Unlike our
+other datasets which are country-level aggregates, this one lists **individual
+bonds and loans** with details on the issuer, sector, size, and verification
+status.
+
+## Why This Dataset Matters
+
+The CBI database tells a different part of the story. The World Bank and IMF
+datasets answer "how much green debt is a country issuing?" This dataset answers
+"what specifically is that money being used for?" — low-carbon transport, solar,
+wind, buildings, water infrastructure, etc. It also adds a quality dimension:
+these bonds have been **independently verified**, which is a higher bar than
+self-labeling.
+
+## Data Source
+
+- **Provider:** Climate Bonds Initiative
+- **Download page:** <https://www.climatebonds.net/data-insights/market-data/certified-climate-bonds-database>
+- **Date accessed:** `r Sys.Date()`
+
+# Setup
+
+```{r load-libraries}
+# install.packages("countrycode")  # Uncomment if not yet installed
+library(tidyverse)
+library(countrycode)
+library(knitr)
+```
+
+# 1. Load the Raw Data
+
+```{r load-data}
+raw <- read_csv("../data/raw/bonds_export.csv")
+
+cat("Dimensions:", nrow(raw), "rows ×", ncol(raw), "columns\n")
+cat("Unique issuers:", n_distinct(raw$`Issuer / Applicant`), "\n")
+cat("Unique countries:", n_distinct(raw$`Issuer Country`, na.rm = TRUE), "\n")
+cat("Total bonds/loans:", nrow(raw), "\n")
+```
+
+```{r inspect}
+glimpse(raw)
+```
+
+# 2. Data Quality Issues
+
+This dataset has several issues we need to address before aggregation.
+
+## 2a. Missing and Malformed Country Names
+
+```{r country-issues}
+# Check for null countries
+null_countries <- sum(is.na(raw$`Issuer Country`))
+cat("Rows with missing country:", null_countries, "\n\n")
+
+# List all unique country names
+cat("All unique country names:\n")
+sort(unique(raw$`Issuer Country`[!is.na(raw$`Issuer Country`)])) %>%
+  paste("  ", .) %>%
+  cat(sep = "\n")
+```
+
+Issues identified:
+
+- **`"UAE"` and `"United Arab Emirates"`** refer to the same country.
+- **`"Hong KongGermany"`** and **`"Hong KongChina"`** are malformed entries
+  (likely data entry errors where a multi-listing separator was missing).
+- **`"Ivory Coast"`** is the common name; ISO standard is Côte d'Ivoire.
+- **`"South Korea"`** should be mapped to Korea, Rep. of.
+- **`"Europe"`** and **`"No single country  covers the European Economic Area"`**
+  are not individual countries.
+- **4 rows** have `NA` for country.
+
+## 2b. Fix Country Names
+
+```{r fix-countries}
+cbi <- raw %>%
+  mutate(
+    `Issuer Country` = case_when(
+      `Issuer Country` == "UAE" ~ "United Arab Emirates",
+      `Issuer Country` == "Hong KongGermany" ~ "Hong Kong",
+      `Issuer Country` == "Hong KongChina" ~ "Hong Kong",
+      `Issuer Country` == "Ivory Coast" ~ "Cote d'Ivoire",
+      `Issuer Country` == "South Korea" ~ "Korea, Republic of",
+      TRUE ~ `Issuer Country`
+    )
+  ) %>%
+  # Remove rows that aren't assignable to a single country
+  filter(
+    !is.na(`Issuer Country`),
+    !`Issuer Country` %in% c(
+      "Europe",
+      "No single country  covers the European Economic Area"
+    )
+  )
+
+cat("Rows after cleaning:", nrow(cbi), "\n")
+cat("Unique countries after cleaning:", n_distinct(cbi$`Issuer Country`), "\n")
+```
+
+## 2c. Add ISO Codes
+
+The CBI dataset uses full country names, not ISO codes. We use the `countrycode`
+package to map them.
+
+```{r add-iso}
+cbi <- cbi %>%
+  mutate(
+    ISO2 = countrycode(
+      `Issuer Country`, origin = "country.name", destination = "iso2c"
+    ),
+    ISO3 = countrycode(
+      `Issuer Country`, origin = "country.name", destination = "iso3c"
+    )
+  )
+
+# Check for failed conversions
+failed <- cbi %>% filter(is.na(ISO2))
+if (nrow(failed) > 0) {
+  cat("WARNING: Failed to convert", n_distinct(failed$`Issuer Country`),
+      "country names:\n")
+  failed %>% distinct(`Issuer Country`) %>% pull() %>% cat(sep = "\n")
+} else {
+  cat("All country names converted successfully.\n")
+}
+```
+
+## 2d. Handle Bond Status
+
+Some bonds have been revoked, redeemed, or discontinued. We flag these but keep
+them in the dataset for transparency.
+
+```{r status-check}
+cbi %>%
+  count(Status) %>%
+  kable(caption = "Bond status distribution")
+```
+
+# 3. Clean the Size Column
+
+The USD equivalent size column is already numeric but has some zero values
+(likely pending or not yet disclosed).
+
+```{r clean-size}
+cbi <- cbi %>%
+  mutate(Size_USD_B = `Size (USD equivalent)` / 1e9)
+
+cat("Bonds with non-zero size:", sum(cbi$Size_USD_B > 0, na.rm = TRUE), "\n")
+cat("Bonds with zero or NA size:", sum(cbi$Size_USD_B == 0 | is.na(cbi$Size_USD_B)), "\n")
+cat("Total value (non-zero):", round(sum(cbi$Size_USD_B[cbi$Size_USD_B > 0],
+                                         na.rm = TRUE), 2), "B USD\n")
+```
+
+# 4. Standardize Sector Names
+
+The sector criteria column has inconsistencies (e.g., extra spaces, mixed
+delimiters for multi-sector bonds).
+
+```{r clean-sectors}
+cbi <- cbi %>%
+  mutate(
+    Sector_Clean = `Sector Criteria` %>%
+      str_replace_all("\\s{2,}", " ") %>%
+      str_trim()
+  )
+
+# For multi-sector bonds, extract the primary (first listed) sector
+cbi <- cbi %>%
+  mutate(
+    Primary_Sector = str_extract(Sector_Clean, "^[A-Za-z ]+") %>%
+      str_trim() %>%
+      str_to_title()
+  )
+
+cbi %>%
+  count(Primary_Sector) %>%
+  arrange(desc(n)) %>%
+  head(12) %>%
+  kable(caption = "Bonds by primary sector")
+```
+
+# 5. Aggregate by Country
+
+For the map layer, we need one row per country with summary statistics.
+
+```{r aggregate-country}
+cbi_by_country <- cbi %>%
+  group_by(`Issuer Country`, ISO2, ISO3) %>%
+  summarise(
+    CBI_Bond_Count = n(),
+    CBI_Total_USD_B = sum(Size_USD_B, na.rm = TRUE),
+    CBI_Unique_Issuers = n_distinct(`Issuer / Applicant`),
+    CBI_First_Issue = min(`Issue date`, na.rm = TRUE),
+    CBI_Latest_Issue = max(`Issue date`, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(CBI_Total_USD_B))
+
+cat("Countries:", nrow(cbi_by_country), "\n")
+```
+
+```{r preview-country}
+cbi_by_country %>%
+  head(20) %>%
+  kable(digits = 3, caption = "Top 20 countries by CBI-certified green bond value")
+```
+
+# 6. Aggregate by Sector (Global)
+
+This is useful reference data — what sectors is certified green finance going to?
+
+```{r aggregate-sector}
+cbi_by_sector <- cbi %>%
+  group_by(Primary_Sector) %>%
+  summarise(
+    Bond_Count = n(),
+    Total_USD_B = sum(Size_USD_B, na.rm = TRUE),
+    Countries = n_distinct(ISO3),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(Total_USD_B))
+
+cbi_by_sector %>%
+  kable(digits = 3, caption = "CBI-certified bonds by sector (global)")
+```
+
+# 7. Aggregate by Country × Sector
+
+For a richer map experience (pop-ups showing sector breakdown per country):
+
+```{r country-sector}
+cbi_country_sector <- cbi %>%
+  group_by(ISO2, ISO3, `Issuer Country`, Primary_Sector) %>%
+  summarise(
+    Bond_Count = n(),
+    Total_USD_B = sum(Size_USD_B, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(ISO3, desc(Total_USD_B))
+
+cat("Country × Sector combinations:", nrow(cbi_country_sector), "\n")
+```
+
+# 8. Export
+
+```{r export}
+write_csv(cbi_by_country, "../data/processed/cbi_by_country.csv")
+write_csv(cbi_by_sector, "../data/processed/cbi_by_sector.csv")
+write_csv(cbi_country_sector, "../data/processed/cbi_country_sector.csv")
+
+cat("Exported:\n")
+cat("  ../data/processed/cbi_by_country.csv —",
+    nrow(cbi_by_country), "rows\n")
+cat("  ../data/processed/cbi_by_sector.csv —",
+    nrow(cbi_by_sector), "rows\n")
+cat("  ../data/processed/cbi_country_sector.csv —",
+    nrow(cbi_country_sector), "rows\n")
+```
+
+# 9. Key Observations
+
+The CBI dataset adds a **quality dimension** to our map. While the World Bank
+and IMF datasets measure the total volume of self-labeled green bonds, the CBI
+database only includes bonds that have been independently verified under the
+Climate Bonds Standard. This means:
+
+- A country may have large green bond issuance (IMF/World Bank) but few
+  CBI-certified bonds — suggesting much of their green labeling is self-declared.
+- A country with a high ratio of CBI-certified to total green bonds has a more
+  credible green finance market.
+- The **sector breakdown** reveals what the money is actually financing, which
+  matters enormously for climate impact assessment.
+
+---
+
+*This notebook is part of the
+[Green Bond Tracker Project](https://github.com/YOUR_USERNAME/green-bond-tracker-project).
+Data sourced from the Climate Bonds Initiative Certified Climate Bonds Database.*

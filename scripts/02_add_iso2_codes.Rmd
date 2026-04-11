@@ -1,0 +1,271 @@
+---
+title: "Green Bond Tracker — ISO Code Conversion for ArcGIS Pro"
+author: "Green Bond Tracker Project"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Overview
+
+In the previous notebook (`01_clean_world_bank_gsss.Rmd`), we cleaned the raw
+World Bank GSSS dataset down to green-bond-only issuance data. That produced two
+files in `data/processed/`:
+
+- `green_bonds_by_country.csv` — 75 rows (70 countries + 5 regional aggregates)
+- `green_bonds_timeseries.csv` — annual time series for those 75 entities
+
+When we loaded `green_bonds_by_country.csv` into ArcGIS Pro alongside the
+**World Countries (Generalized)** boundary layer from Esri's Living Atlas, we
+discovered a **code mismatch**: our data uses **ISO 3166-1 alpha-3** codes
+(3 letters, e.g. `CHN`, `BRA`, `IND`) but the ArcGIS layer uses
+**ISO 3166-1 alpha-2** codes (2 letters, e.g. `CN`, `BR`, `IN`).
+
+This notebook adds an `ISO2` column to both processed files so they can be
+joined to the ArcGIS country polygons. We also separate countries from regional
+aggregates, since regional aggregates have no corresponding polygon to join to.
+
+## Why Not Just Fix It Manually?
+
+We could hand-edit the CSV or do a one-off conversion. But documenting the
+transformation in code means:
+
+1. **Reproducibility** — anyone can re-run this pipeline from raw data to
+   map-ready output.
+2. **Transparency** — the repo shows exactly how every field was derived.
+3. **Auditability** — if a code mapping is wrong, we can trace it here.
+
+# Setup
+
+We use the `countrycode` package for the ISO3-to-ISO2 conversion. This package
+maintains a curated lookup table of country code standards and handles edge cases
+(name variations, historical changes, etc.) far more reliably than a hand-built
+mapping table.
+
+```{r load-libraries}
+# install.packages("countrycode")  # Uncomment if not yet installed
+# install.packages("tidyverse")    # Uncomment if not yet installed
+
+library(tidyverse)
+library(countrycode)
+library(knitr)
+```
+
+# 1. Load the Processed Data
+
+```{r load-data}
+summary_df <- read_csv("../data/processed/green_bonds_by_country.csv")
+timeseries_df <- read_csv("../data/processed/green_bonds_timeseries.csv")
+
+cat("Summary table:", nrow(summary_df), "rows\n")
+cat("Time series table:", nrow(timeseries_df), "rows\n")
+```
+
+Quick sanity check — confirm the data looks as expected:
+
+```{r sanity-check}
+summary_df %>%
+  head(10) %>%
+  kable(caption = "First 10 rows of summary table")
+```
+
+# 2. Separate Countries from Regional Aggregates
+
+Regional aggregates (e.g., "Latin America & Caribbean") don't have ISO2 codes
+and can't be joined to country polygons. We split them out now. They'll be
+preserved in a separate reference file for use in charts or documentation, but
+they won't go into the ArcGIS join.
+
+```{r separate-regions}
+regions_df <- summary_df %>% filter(Is_Region == TRUE)
+countries_df <- summary_df %>% filter(Is_Region == FALSE)
+
+cat("Countries:", nrow(countries_df), "\n")
+cat("Regional aggregates:", nrow(regions_df), "\n\n")
+
+cat("Regional aggregates being separated:\n")
+regions_df %>%
+  select(ISO3, Country) %>%
+  kable()
+```
+
+# 3. Convert ISO3 to ISO2
+
+The `countrycode()` function takes our 3-letter codes and returns the
+corresponding 2-letter codes. We specify `origin = "iso3c"` (ISO alpha-3) and
+`destination = "iso2c"` (ISO alpha-2).
+
+```{r convert-codes}
+countries_df <- countries_df %>%
+  mutate(
+    ISO2 = countrycode(
+      sourcevar = ISO3,
+      origin = "iso3c",
+      destination = "iso2c"
+    )
+  )
+```
+
+## 3a. Verify the Conversion
+
+This is the most important step. We check for any codes that failed to convert
+(returned `NA`), and we eyeball a sample of mappings to make sure they're
+correct.
+
+```{r verify-conversion}
+# Check for failed conversions
+failed <- countries_df %>% filter(is.na(ISO2))
+
+if (nrow(failed) > 0) {
+  cat("WARNING:", nrow(failed), "codes failed to convert:\n")
+  failed %>% select(ISO3, Country) %>% kable()
+} else {
+  cat("All", nrow(countries_df), "country codes converted successfully.\n")
+}
+
+# Check for duplicates (two ISO3 codes mapping to the same ISO2)
+dupes <- countries_df %>%
+  group_by(ISO2) %>%
+  filter(n() > 1)
+
+if (nrow(dupes) > 0) {
+  cat("\nWARNING: Duplicate ISO2 codes detected:\n")
+  dupes %>% select(ISO3, ISO2, Country) %>% kable()
+} else {
+  cat("No duplicate ISO2 codes. Each country maps uniquely.\n")
+}
+```
+
+Let's also eyeball a sample of the mappings to make sure they pass the
+common-sense test:
+
+```{r eyeball-mappings}
+countries_df %>%
+  select(ISO3, ISO2, Country) %>%
+  slice_sample(n = 15) %>%
+  arrange(Country) %>%
+  kable(caption = "Random sample of ISO3 → ISO2 mappings")
+```
+
+# 4. Reorganize Columns
+
+We put `ISO2` right next to `ISO3` for clarity, and drop the `Is_Region` column
+since this file now contains only countries.
+
+```{r reorganize-columns}
+countries_export <- countries_df %>%
+  select(
+    ISO3,
+    ISO2,
+    Country,
+    Green_2024_USD_B,
+    Green_Cumulative_USD_B,
+    First_Year,
+    Years_Active
+  )
+
+countries_export %>%
+  head(15) %>%
+  kable(digits = 3, caption = "Final country table (first 15 rows)")
+```
+
+# 5. Update the Time Series Too
+
+The time series file also needs ISO2 codes for potential time-enabled layers in
+ArcGIS. We apply the same conversion, and also split out regions.
+
+```{r update-timeseries}
+timeseries_countries <- timeseries_df %>%
+  filter(Is_Region == FALSE) %>%
+  mutate(
+    ISO2 = countrycode(ISO3, "iso3c", "iso2c")
+  ) %>%
+  select(ISO3, ISO2, Country, Year, Green_Issuance_USD_B)
+
+timeseries_regions <- timeseries_df %>%
+  filter(Is_Region == TRUE)
+
+cat("Time series — countries:", nrow(timeseries_countries), "rows\n")
+cat("Time series — regions:", nrow(timeseries_regions), "rows\n")
+
+# Verify no failed conversions
+ts_failed <- timeseries_countries %>% filter(is.na(ISO2))
+cat("Failed time series conversions:", nrow(ts_failed), "\n")
+```
+
+# 6. Summary Before Export
+
+```{r final-summary}
+cat("=== FINAL OUTPUT SUMMARY ===\n\n")
+
+cat("Countries file:\n")
+cat("  Rows:", nrow(countries_export), "\n")
+cat("  Columns:", paste(names(countries_export), collapse = ", "), "\n")
+cat("  Countries with 2024 issuance > 0:",
+    sum(countries_export$Green_2024_USD_B > 0), "\n")
+cat("  Total cumulative green issuance: $",
+    round(sum(countries_export$Green_Cumulative_USD_B), 2), "B\n\n")
+
+cat("Time series file:\n")
+cat("  Rows:", nrow(timeseries_countries), "\n")
+cat("  Entities:", n_distinct(timeseries_countries$ISO3), "\n")
+cat("  Years:", min(timeseries_countries$Year), "to",
+    max(timeseries_countries$Year), "\n\n")
+
+cat("Regional aggregates file:\n")
+cat("  Rows:", nrow(regions_df), "\n")
+cat("  Entities:", n_distinct(regions_df$ISO3), "\n")
+```
+
+# 7. Export
+
+We write three files to `data/processed/`:
+
+1. **`green_bonds_by_country_iso2.csv`** — The map-ready file with ISO2 codes.
+   This is what you join to country polygons in ArcGIS Pro.
+2. **`green_bonds_timeseries_iso2.csv`** — The time series with ISO2 codes.
+3. **`green_bonds_regional_aggregates.csv`** — Regional aggregates, kept
+   separately for reference.
+
+```{r export}
+write_csv(countries_export, "../data/processed/green_bonds_by_country_iso2.csv")
+write_csv(timeseries_countries, "../data/processed/green_bonds_timeseries_iso2.csv")
+write_csv(regions_df, "../data/processed/green_bonds_regional_aggregates.csv")
+
+cat("Exported:\n")
+cat("  data/processed/green_bonds_by_country_iso2.csv —",
+    nrow(countries_export), "rows\n")
+cat("  data/processed/green_bonds_timeseries_iso2.csv —",
+    nrow(timeseries_countries), "rows\n")
+cat("  data/processed/green_bonds_regional_aggregates.csv —",
+    nrow(regions_df), "rows\n")
+```
+
+# 8. Next Steps in ArcGIS Pro
+
+With the new `green_bonds_by_country_iso2.csv` file, the ArcGIS Pro workflow is:
+
+1. **Remove** the old `green_bonds_by_country.csv` standalone table from the
+   project (right-click → Remove).
+2. **Add Data** → navigate to `data/processed/green_bonds_by_country_iso2.csv`.
+3. **Right-click** `World_Countries_Generalized` → **Joins and Relates** →
+   **Add Join**.
+4. Set **Input Join Field** to the 2-character ISO code column in the countries
+   layer (the column titled `Two-character ISO Code for the Country`).
+5. Set **Join Table** to `green_bonds_by_country_iso2.csv`.
+6. Set **Join Table Field** to `ISO2`.
+7. Click **OK** — the country polygons now carry your green bond data.
+
+---
+
+*This notebook is part of the
+[Green Bond Tracker Project](https://github.com/YOUR_USERNAME/green-bond-tracker-project).
+Data sourced from the World Bank Data360 platform under CC BY 4.0 license.*

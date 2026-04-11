@@ -1,0 +1,6 @@
+*.aprx
+*.gdb/
+*.tbx
+*.lyrx
+.backups/
+GreenBondTracker/

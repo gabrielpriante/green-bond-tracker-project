@@ -1,0 +1,259 @@
+---
+title: "Green Bond Tracker — Data Cleaning: IMF Carbon Footprint of Bank Loans"
+author: "Green Bond Tracker Project"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Overview
+
+This notebook processes the IMF **Carbon Footprint of Bank Loans (CFBL)**
+dataset for use as a second thematic layer in our ArcGIS Pro map. The CFBL
+indicator quantifies how carbon-intensive a country's bank lending portfolio is.
+By overlaying this with our green bond issuance data, we can ask a powerful
+analytical question: *Are the countries with the dirtiest bank lending also the
+ones issuing green bonds to finance the transition — or not?*
+
+## Data Source
+
+- **Provider:** International Monetary Fund (IMF), Climate Change Indicators
+  Dashboard
+- **Indicator:** Carbon Footprint-Adjusted Loans to Total Loans for Deposit
+  Takers
+- **Download page:** <https://climatedata.imf.org/datasets/596f11fea29d429ba6c5507e3756a751_0/explore>
+- **ArcGIS Feature Service:** `https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/Indicator_9_Carbon_footprint_adjusted_loans_to_total_loans_for_deposit_takers/FeatureServer`
+- **Original sources:** OECD Inter-Country Input-Output Database; IMF Statistics
+  Department Questionnaire; IMF staff calculations
+- **Date accessed:** `r Sys.Date()`
+
+## What Does the Indicator Measure?
+
+The CFBL takes the dollar value of bank loans to each economic sector, multiplies
+each by that sector's carbon emissions factor (tonnes of CO2 per dollar of
+output), sums across all sectors, and divides by total loans. A **higher ratio**
+means a country's banking system is lending more heavily to carbon-intensive
+industries. A **lower ratio** means lending is tilted toward cleaner sectors.
+
+The dataset provides four variants of this indicator:
+
+| Code   | Name                         | What It Captures                                      |
+|--------|------------------------------|-------------------------------------------------------|
+| ECFLI  | Emission Intensities         | Direct emissions only (raw ratio)                     |
+| ECFLIN | Emission Intensities Norm.   | Same, but indexed to base year = 100                  |
+| ECFLM  | Emission Multipliers         | Direct + indirect upstream emissions (raw ratio)      |
+| ECFLMN | Emission Multipliers Norm.   | Same, but indexed to base year = 100                  |
+
+**We will use `ECFLM` (Emission Multipliers, raw ratio)** for the map because:
+
+1. It captures the **full carbon picture** including supply-chain emissions, not
+   just direct combustion.
+2. The **raw ratio** is directly comparable across countries (unlike the
+   normalized version, which only shows change relative to each country's own
+   base year).
+
+# Setup
+
+```{r load-libraries}
+library(tidyverse)
+library(knitr)
+```
+
+# 1. Load the Raw Data
+
+```{r load-data}
+raw <- read_csv("../data/raw/Carbon_Footprint_of_Bank_Loans.csv")
+
+cat("Dimensions:", nrow(raw), "rows ×", ncol(raw), "columns\n")
+cat("Countries:", n_distinct(raw$Country), "\n")
+cat("Indicators:", n_distinct(raw$Indicator), "\n")
+```
+
+```{r inspect}
+glimpse(raw)
+```
+
+# 2. Understand the Structure
+
+The data is in **wide format**: each year is a separate column (`F2005` through
+`F2018`). Each country appears four times — once per indicator variant. Let's
+confirm this.
+
+```{r structure-check}
+raw %>%
+  count(CTS_Code, Indicator) %>%
+  kable(caption = "Rows per indicator variant")
+```
+
+And data availability grows over time (more countries report in later years):
+
+```{r availability}
+year_cols <- paste0("F", 2005:2018)
+
+availability <- raw %>%
+  filter(CTS_Code == "ECFLM") %>%
+  summarise(across(all_of(year_cols), ~sum(!is.na(.)))) %>%
+  pivot_longer(everything(), names_to = "Year", values_to = "Countries") %>%
+  mutate(Year = as.integer(str_remove(Year, "F")))
+
+availability %>% kable(caption = "Countries with ECFLM data by year")
+```
+
+# 3. Filter to Emission Multipliers (ECFLM)
+
+```{r filter-ecflm}
+ecflm <- raw %>%
+  filter(CTS_Code == "ECFLM")
+
+cat("Rows after filtering to ECFLM:", nrow(ecflm), "\n")
+cat("Countries:", n_distinct(ecflm$Country), "\n")
+```
+
+# 4. Reshape from Wide to Long
+
+ArcGIS Pro works better with long-format data for time-enabled layers. We also
+need long format to compute summary statistics per country.
+
+```{r reshape}
+ecflm_long <- ecflm %>%
+  select(Country, ISO2, ISO3, all_of(year_cols)) %>%
+  pivot_longer(
+    cols = all_of(year_cols),
+    names_to = "Year",
+    values_to = "CFBL_Multiplier"
+  ) %>%
+  mutate(Year = as.integer(str_remove(Year, "F"))) %>%
+  filter(!is.na(CFBL_Multiplier))
+
+cat("Long-format rows:", nrow(ecflm_long), "\n")
+cat("Countries:", n_distinct(ecflm_long$Country), "\n")
+cat("Year range:", min(ecflm_long$Year), "to", max(ecflm_long$Year), "\n")
+```
+
+# 5. Build the Map-Ready Summary Table
+
+For the static map layer, we need one row per country with the most recent
+CFBL value (2018 for all 40 countries), plus contextual columns.
+
+```{r build-summary}
+cfbl_summary <- ecflm_long %>%
+  group_by(Country, ISO2, ISO3) %>%
+  summarise(
+    CFBL_2018 = CFBL_Multiplier[Year == 2018],
+    CFBL_First_Year = min(Year),
+    CFBL_Years_Reported = n(),
+    CFBL_Mean = mean(CFBL_Multiplier),
+    CFBL_Trend = case_when(
+      n() >= 3 ~ coef(lm(CFBL_Multiplier ~ Year))[2],
+      TRUE ~ NA_real_
+    ),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(CFBL_2018))
+
+cat("Summary table:", nrow(cfbl_summary), "rows\n")
+```
+
+The `CFBL_Trend` column is the linear slope (change in CFBL per year). A
+**negative trend** means the country's bank lending is getting cleaner over time.
+A **positive trend** means it's getting dirtier.
+
+```{r preview-summary}
+cfbl_summary %>%
+  head(20) %>%
+  kable(digits = 2, caption = "Top 20 countries by carbon footprint of bank loans (2018)")
+```
+
+# 6. Identify Overlap with Green Bond Data
+
+This is the analytical heart of the project. Which countries appear in both
+datasets?
+
+```{r overlap-analysis}
+green <- read_csv("../data/processed/green_bonds_by_country.csv") %>%
+  filter(Is_Region == FALSE)
+
+overlap <- inner_join(
+  cfbl_summary %>% select(ISO3, Country, CFBL_2018, CFBL_Trend),
+  green %>% select(ISO3, Green_Cumulative_USD_B, Green_2024_USD_B),
+  by = "ISO3"
+)
+
+cat("Countries with BOTH green bond and carbon footprint data:", nrow(overlap), "\n\n")
+
+overlap %>%
+  arrange(desc(CFBL_2018)) %>%
+  kable(digits = 2,
+        caption = "Countries with both CFBL and green bond data — sorted by carbon intensity")
+```
+
+This table is where the interesting stories emerge. For instance:
+
+- **Kazakhstan** has the highest CFBL (1205) but minimal green bond issuance
+  ($0.12B) — a potential gap in transition finance.
+- **Indonesia** has a high CFBL (645) and meaningful green bond issuance
+  ($11.4B) — possibly financing the transition.
+- **Czechia** and **Hungary** have moderate CFBL scores but strong green bond
+  programs — potentially proactive.
+
+# 7. Export
+
+We export three files:
+
+1. **`cfbl_by_country.csv`** — One row per country, map-ready for ArcGIS Pro
+   join.
+2. **`cfbl_timeseries.csv`** — Long-format annual data for time-enabled layers
+   or charts.
+3. **`cfbl_green_bond_overlap.csv`** — The combined dataset for countries in
+   both sources.
+
+```{r export}
+write_csv(cfbl_summary, "../data/processed/cfbl_by_country.csv")
+write_csv(ecflm_long, "../data/processed/cfbl_timeseries.csv")
+write_csv(overlap, "../data/processed/cfbl_green_bond_overlap.csv")
+
+cat("Exported:\n")
+cat("  ../data/processed/cfbl_by_country.csv —",
+    nrow(cfbl_summary), "rows\n")
+cat("  ../data/processed/cfbl_timeseries.csv —",
+    nrow(ecflm_long), "rows\n")
+cat("  ../data/processed/cfbl_green_bond_overlap.csv —",
+    nrow(overlap), "rows\n")
+```
+
+# 8. Next Steps in ArcGIS Pro
+
+With `cfbl_by_country.csv` ready:
+
+1. **Add Data** → `data/processed/cfbl_by_country.csv` as a standalone table.
+2. **Right-click** `World_Countries_Generalized` → **Joins and Relates** →
+   **Add Join**.
+3. Join on `ISO2` (the 2-character ISO code column in the countries layer) to
+   `ISO2` in the CFBL table.
+
+**Important:** ArcGIS Pro only supports one active join per field at a time. Since
+we already joined the green bond data on the same ISO2 field, we have two
+options:
+
+- **Option A:** Export the countries layer to a new feature class (right-click →
+  Data → Export Features) to make the green bond join permanent, then add the
+  CFBL join on top.
+- **Option B:** Merge both CSVs into a single table before joining, so only one
+  join is needed.
+
+Option B is cleaner. We will build that combined table in the next notebook if
+needed.
+
+---
+
+*This notebook is part of the
+[Green Bond Tracker Project](https://github.com/YOUR_USERNAME/green-bond-tracker-project).
+IMF data accessed from the Climate Change Indicators Dashboard.*
