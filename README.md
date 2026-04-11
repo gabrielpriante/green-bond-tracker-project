@@ -1,6 +1,6 @@
 # 🌍 Global Green Bond Tracker
 
-An interactive ArcGIS web map tracking green bond issuance across 114 countries, overlaid with the carbon footprint of bank lending portfolios. Built to answer a simple question: *Is the global financial system actually financing the green transition — or just talking about it?*
+An interactive ArcGIS web map tracking green bond issuance across 114 countries, overlaid with the carbon footprint of bank lending portfolios. Built to answer a simple question: *Is the global financial system actually financing the green transition, or just talking about it?*
 
 **[🗺️ View the Live Map](https://arcg.is/8D4mP0)**
 ![Map Preview](docs/map_preview.png)
