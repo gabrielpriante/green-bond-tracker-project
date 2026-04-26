@@ -163,3 +163,4 @@ The code and documentation in this repository are available under the [MIT Licen
 ## Acknowledgments
 
 Built as part of an environmental data science project at the University of Pittsburgh. Data provided by the World Bank, International Monetary Fund, and Climate Bonds Initiative.
+**Author:** [Gabriel Penedo](https://gabrielpriante.github.io)
